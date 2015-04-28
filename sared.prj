@@ -1,0 +1,208 @@
+<deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
+  <configuration build-checksum="5329090" file="Z:\Desktop\cycle143\Reduction\v0.5\sared.prj" location="Z:\Desktop\cycle143\Reduction\v0.5" name="sared" preferred-package-location="Z:\Desktop\cycle143\Reduction\v0.5\sared\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="MATLAB Compiler for Standalone Applications">
+    <param.appname>sared</param.appname>
+    <param.icon>${PROJECT_ROOT}\sared_resources\icon.ico</param.icon>
+    <param.icons>
+      <file>${PROJECT_ROOT}\sared_resources\icon_48.png</file>
+      <file>${PROJECT_ROOT}\sared_resources\icon_32.png</file>
+      <file>${PROJECT_ROOT}\sared_resources\icon_24.png</file>
+      <file>${PROJECT_ROOT}\sared_resources\icon_16.png</file>
+    </param.icons>
+    <param.version>1.0</param.version>
+    <param.authnamewatermark>Gunnar Karl Palsson</param.authnamewatermark>
+    <param.email>gunnar.karl@gmail.com</param.email>
+    <param.company>Uppsala University</param.company>
+    <param.summary />
+    <param.description />
+    <param.screenshot>Z:\Desktop\cycle143\Reduction\v0.6\splash.png</param.screenshot>
+    <param.guid />
+    <param.installpath.string>\Uppsala_University\sared\</param.installpath.string>
+    <param.installpath.combo>option.installpath.programfiles</param.installpath.combo>
+    <param.logo />
+    <param.install.notes />
+    <param.intermediate>${PROJECT_ROOT}\sared\for_testing</param.intermediate>
+    <param.files.only>${PROJECT_ROOT}\sared\for_redistribution_files_only</param.files.only>
+    <param.output>${PROJECT_ROOT}\sared\for_redistribution</param.output>
+    <param.enable.clean.build>false</param.enable.clean.build>
+    <param.user.defined.mcr.options />
+    <param.embed.ctf>true</param.embed.ctf>
+    <param.server.ctf>${PROJECT_ROOT}\sared\for_testing\.ctf</param.server.ctf>
+    <param.server.readme>${PROJECT_ROOT}\sared\for_testing\readme.txt</param.server.readme>
+    <param.target.type>subtarget.standalone</param.target.type>
+    <param.support.packages />
+    <param.required.mcr.products>
+      <item>35000</item>
+      <item>35001</item>
+    </param.required.mcr.products>
+    <param.web.mcr>true</param.web.mcr>
+    <param.package.mcr>false</param.package.mcr>
+    <param.no.mcr>false</param.no.mcr>
+    <param.web.mcr.name>MyAppInstaller_web</param.web.mcr.name>
+    <param.package.mcr.name>MyAppInstaller_mcr</param.package.mcr.name>
+    <param.no.mcr.name>MyAppInstaller_app</param.no.mcr.name>
+    <param.windows.command.prompt>true</param.windows.command.prompt>
+    <param.create.log>false</param.create.log>
+    <param.log.file />
+    <unset>
+      <param.version />
+      <param.summary />
+      <param.description />
+      <param.guid />
+      <param.installpath.string />
+      <param.installpath.combo />
+      <param.logo />
+      <param.install.notes />
+      <param.intermediate />
+      <param.files.only />
+      <param.output />
+      <param.enable.clean.build />
+      <param.user.defined.mcr.options />
+      <param.embed.ctf />
+      <param.server.ctf />
+      <param.server.readme />
+      <param.target.type />
+      <param.support.packages />
+      <param.web.mcr />
+      <param.package.mcr />
+      <param.no.mcr />
+      <param.web.mcr.name />
+      <param.package.mcr.name />
+      <param.no.mcr.name />
+      <param.windows.command.prompt />
+      <param.create.log />
+      <param.log.file />
+    </unset>
+    <fileset.main>
+      <file>${PROJECT_ROOT}\sared.m</file>
+    </fileset.main>
+    <fileset.resources>
+      <file>C:\Users\gkp\Documents\MATLAB\C:\Users\gkp\Documents\MATLAB\calc_fa.m</file>
+      <file>C:\Users\gkp\Documents\MATLAB\C:\Users\gkp\Documents\MATLAB\Matlab_functions\errorbar_tick.m</file>
+      <file>C:\Users\gkp\Documents\MATLAB\C:\Users\gkp\Documents\MATLAB\Matlab_functions\mtimesx_20110223\mtimesx.m</file>
+      <file>C:\Users\gkp\Documents\MATLAB\C:\Users\gkp\Documents\MATLAB\Matlab_functions\mtimesx_20110223\mtimesx.mexmaci64</file>
+      <file>C:\Users\gkp\Documents\MATLAB\C:\Users\gkp\Documents\MATLAB\Matlab_functions\roundn.m</file>
+      <file>C:\Users\gkp\Documents\MATLAB\Matlab_functions\errorbar_tick.m</file>
+      <file>C:\Users\gkp\Documents\MATLAB\Matlab_functions\mtimesx_20110223\mtimesx.m</file>
+      <file>C:\Users\gkp\Documents\MATLAB\Matlab_functions\mtimesx_20110223\mtimesx.mexmaci64</file>
+      <file>C:\Users\gkp\Documents\MATLAB\Matlab_functions\roundn.m</file>
+      <file>${PROJECT_ROOT}\atoms.mat</file>
+      <file>${PROJECT_ROOT}\calc_fa.m</file>
+      <file>${PROJECT_ROOT}\calc_fp.m</file>
+      <file>${PROJECT_ROOT}\calc_p.m</file>
+      <file>${PROJECT_ROOT}\calc_phi.m</file>
+      <file>${PROJECT_ROOT}\calc_spinrefl_v9.m</file>
+      <file>${PROJECT_ROOT}\deopt_grid.m</file>
+      <file>${PROJECT_ROOT}\fundamentalPhysicalConstantsFromNIST.m</file>
+      <file>${PROJECT_ROOT}\GaussConv.m</file>
+      <file>${PROJECT_ROOT}\GaussIntensity_v2.m</file>
+      <file>${PROJECT_ROOT}\get_weighted_bi_incl_abs.m</file>
+      <file>${PROJECT_ROOT}\get_weighted_f.m</file>
+      <file>${PROJECT_ROOT}\getSLD.m</file>
+      <file>${PROJECT_ROOT}\h5read_pol_SuperADAM.m</file>
+      <file>${PROJECT_ROOT}\left_win.m</file>
+      <file>${PROJECT_ROOT}\makeDataLogFriendly.m</file>
+      <file>${PROJECT_ROOT}\makeVector.m</file>
+      <file>${PROJECT_ROOT}\maps\Autumn.map</file>
+      <file>${PROJECT_ROOT}\maps\Beach.map</file>
+      <file>${PROJECT_ROOT}\maps\BlackBodyRadiation.map</file>
+      <file>${PROJECT_ROOT}\maps\BlueIn.map</file>
+      <file>${PROJECT_ROOT}\maps\BlueOut.map</file>
+      <file>${PROJECT_ROOT}\maps\BlueRed.map</file>
+      <file>${PROJECT_ROOT}\maps\BP.map</file>
+      <file>${PROJECT_ROOT}\maps\BPG.map</file>
+      <file>${PROJECT_ROOT}\maps\BWB.map</file>
+      <file>${PROJECT_ROOT}\maps\ColdFire.map</file>
+      <file>${PROJECT_ROOT}\maps\Colors.map</file>
+      <file>${PROJECT_ROOT}\maps\Cool.map</file>
+      <file>${PROJECT_ROOT}\maps\Gamma1.map</file>
+      <file>${PROJECT_ROOT}\maps\Gamma2.map</file>
+      <file>${PROJECT_ROOT}\maps\GreenIn.map</file>
+      <file>${PROJECT_ROOT}\maps\GreenOut.map</file>
+      <file>${PROJECT_ROOT}\maps\GreenToWhite.map</file>
+      <file>${PROJECT_ROOT}\maps\Grey.map</file>
+      <file>${PROJECT_ROOT}\maps\IDL-rainbow.map</file>
+      <file>${PROJECT_ROOT}\maps\Indigo.map</file>
+      <file>${PROJECT_ROOT}\maps\Jet.map</file>
+      <file>${PROJECT_ROOT}\maps\Lace.map</file>
+      <file>${PROJECT_ROOT}\maps\Rainbow.map</file>
+      <file>${PROJECT_ROOT}\maps\RBY.map</file>
+      <file>${PROJECT_ROOT}\maps\RedIn.map</file>
+      <file>${PROJECT_ROOT}\maps\RedOut.map</file>
+      <file>${PROJECT_ROOT}\maps\RosePetals.map</file>
+      <file>${PROJECT_ROOT}\maps\TouchOfBlues.map</file>
+      <file>${PROJECT_ROOT}\maps\Volcano.map</file>
+      <file>${PROJECT_ROOT}\maps\YellowToBlack.map</file>
+      <file>${PROJECT_ROOT}\model.m</file>
+      <file>${PROJECT_ROOT}\MolMass.m</file>
+      <file>${PROJECT_ROOT}\padme.m</file>
+      <file>${PROJECT_ROOT}\parratt.m</file>
+      <file>${PROJECT_ROOT}\parratt_v2.m</file>
+      <file>${PROJECT_ROOT}\periodic_table.m</file>
+      <file>${PROJECT_ROOT}\pertable.m</file>
+      <file>${PROJECT_ROOT}\ploterr.m</file>
+      <file>${PROJECT_ROOT}\PlotIt.m</file>
+      <file>${PROJECT_ROOT}\preferences.fig</file>
+      <file>${PROJECT_ROOT}\preferences.m</file>
+      <file>${PROJECT_ROOT}\process_filearray.m</file>
+      <file>${PROJECT_ROOT}\redchisqr.m</file>
+      <file>${PROJECT_ROOT}\reduceData.m</file>
+      <file>${PROJECT_ROOT}\roundnv.m</file>
+      <file>${PROJECT_ROOT}\sared.fig</file>
+      <file>${PROJECT_ROOT}\settings.mat</file>
+      <file>${PROJECT_ROOT}\SquareIntensity.m</file>
+      <file>${PROJECT_ROOT}\sym2an.m</file>
+      <file>${PROJECT_ROOT}\XrayF.mat</file>
+    </fileset.resources>
+    <fileset.package />
+    <build-deliverables>
+      <file location="${PROJECT_ROOT}\sared\for_testing" name="readme.txt" optional="true">Z:\Desktop\cycle143\Reduction\v0.5\sared\for_testing\readme.txt</file>
+      <file location="${PROJECT_ROOT}\sared\for_testing" name="splash.png" optional="false">Z:\Desktop\cycle143\Reduction\v0.5\sared\for_testing\splash.png</file>
+      <file location="${PROJECT_ROOT}\sared\for_testing" name="sared.exe" optional="false">Z:\Desktop\cycle143\Reduction\v0.5\sared\for_testing\sared.exe</file>
+    </build-deliverables>
+    <workflow />
+    <matlab>
+      <root>C:\Program Files\MATLAB\R2014b</root>
+      <toolboxes>
+        <toolbox name="matlabhdlcoder" />
+        <toolbox name="fixedpoint" />
+        <toolbox name="embeddedcoder" />
+        <toolbox name="matlabcoder" />
+      </toolboxes>
+      <toolbox>
+        <matlabhdlcoder>
+          <enabled>true</enabled>
+        </matlabhdlcoder>
+      </toolbox>
+      <toolbox>
+        <fixedpoint>
+          <enabled>true</enabled>
+        </fixedpoint>
+      </toolbox>
+      <toolbox>
+        <embeddedcoder>
+          <enabled>true</enabled>
+        </embeddedcoder>
+      </toolbox>
+      <toolbox>
+        <matlabcoder>
+          <enabled>true</enabled>
+        </matlabcoder>
+      </toolbox>
+    </matlab>
+    <platform>
+      <unix>false</unix>
+      <mac>false</mac>
+      <windows>true</windows>
+      <win2k>false</win2k>
+      <winxp>false</winxp>
+      <vista>false</vista>
+      <linux>false</linux>
+      <solaris>false</solaris>
+      <osver>6.1</osver>
+      <os32>false</os32>
+      <os64>true</os64>
+      <arch>win64</arch>
+      <matlab>true</matlab>
+    </platform>
+  </configuration>
+</deployment-project>

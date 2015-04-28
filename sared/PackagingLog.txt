@@ -1,0 +1,32 @@
+ant:
+<ant>
+  <mkdir dir="/Users/gkp/Desktop/cycle143/Reduction/v0.5/sared/for_redistribution" />
+  <mkdir dir="/Users/gkp/Desktop/cycle143/Reduction/v0.5/sared/for_testing" />
+  <mkdir dir="/Users/gkp/Desktop/cycle143/Reduction/v0.5/sared/for_redistribution_files_only" />
+</ant>
+mcc -o sared -W WinMain:sared -T link:exe -d /Users/gkp/Desktop/cycle143/Reduction/v0.5/sared/for_testing -v /Users/gkp/Desktop/cycle143/Reduction/v0.5/sared.m -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/atoms.mat -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/maps/Autumn.map -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/maps/Beach.map -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/maps/BlackBodyRadiation.map -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/maps/BlueIn.map -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/maps/BlueOut.map -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/maps/BlueRed.map -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/maps/BP.map -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/maps/BPG.map -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/maps/BWB.map -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/maps/ColdFire.map -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/maps/Colors.map -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/maps/Cool.map -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/maps/Gamma1.map -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/maps/Gamma2.map -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/maps/GreenIn.map -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/maps/GreenOut.map -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/maps/GreenToWhite.map -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/maps/Grey.map -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/maps/IDL-rainbow.map -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/maps/Indigo.map -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/maps/Jet.map -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/maps/Lace.map -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/maps/Rainbow.map -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/maps/RBY.map -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/maps/RedIn.map -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/maps/RedOut.map -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/maps/RosePetals.map -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/settings.mat -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/maps/TouchOfBlues.map -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/maps/Volcano.map -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/XrayF.mat -a /Users/gkp/Desktop/cycle143/Reduction/v0.5/maps/YellowToBlack.map 
+Compiler version: 5.2 (R2014b)
+Dependency analysis by REQUIREMENTS.
+[Warning: Adding path "/Users/gkp/Desktop/cycle143/Reduction/v0.5" to Compiler
+path instance.] 
+Parsing file "/Users/gkp/Desktop/cycle143/Reduction/v0.5/sared.m"
+	(Referenced from: "Compiler Command Line").
+Deleting 7 temporary MEX authorization files.
+Removing: '/tmp/02059NlnQmk_8281.auth'.
+Removing: '/tmp/020599bF0RK_8281.auth'.
+Removing: '/tmp/02059yjuN7D_8281.auth'.
+Removing: '/tmp/02059aPPomE_8281.auth'.
+Removing: '/tmp/02059Ee1JbS_8281.auth'.
+Removing: '/tmp/02059p6iEyc_8281.auth'.
+Removing: '/tmp/02059XwG4bT_8281.auth'.
+Generating file "/Users/gkp/Desktop/cycle143/Reduction/v0.5/sared/for_testing/readme.txt".
+Generating file "/Users/gkp/Desktop/cycle143/Reduction/v0.5/sared/for_testing/run_sared.sh".
+Packaging...
+Adding custom icon /Applications/MATLAB_R2014b.app/toolbox/compiler/Resources/default_icon.icns to /Users/gkp/Desktop/cycle143/Reduction/v0.5/sared/for_testing/sared.app.
+Creating the bundle...
+Copying /Applications/MATLAB_R2014b.app/toolbox/compiler/maci64/setup.app to /Users/gkp/Desktop/cycle143/Reduction/v0.5/sared/for_redistribution/MyAppInstaller_web.app.
+Copying /Users/gkp/Desktop/cycle143/Reduction/v0.5/sared/for_redistribution/bundle.zip to /Users/gkp/Desktop/cycle143/Reduction/v0.5/sared/for_redistribution/MyAppInstaller_web.app/Contents/Resources/bundle.zip.
+Copying /Applications/MATLAB_R2014b.app/toolbox/compiler/Resources/default_splash.png to /Users/gkp/Desktop/cycle143/Reduction/v0.5/sared/for_redistribution/MyAppInstaller_web.app/Contents/Resources/splash.png.
+Copying /Applications/MATLAB_R2014b.app/toolbox/compiler/Resources/default_icon.icns to /Users/gkp/Desktop/cycle143/Reduction/v0.5/sared/for_redistribution/MyAppInstaller_web.app/Contents/Resources/installer.icns.
+Web based installer created at /Users/gkp/Desktop/cycle143/Reduction/v0.5/sared/for_redistribution/MyAppInstaller_web.app.
+Packaging complete.

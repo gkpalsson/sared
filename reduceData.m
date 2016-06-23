@@ -34,22 +34,26 @@ if handles.listDirectExists
         db{i}.Monitor = db{i}.SumMonitor;
       end
       handles.DM(i)   = db{i}.Monitor;
-      
+      handles.DTime(i) = db{i}.Time;
       handles.sDM(i)  = sqrt(db{i}.Monitor);
   
       handles.DSampleSlit(i)  = db{i}.SampleSlit;
       handles.DMonoSlit(i)  = db{i}.MonoSlit;
       %db{i} = fitModel(db{i},handles);
-%     db{i}.hwhm = 2*sqrt(2*log(2))*atand(db{i}.GaussPeak.c*mm_per_pixel/handles.settings.SD)/2;
+      %db{i}.hwhm = 2*sqrt(2*log(2))*atand(db{i}.GaussPeak.c*mm_per_pixel/handles.settings.SD)/2;
 
     end
  
     handles.db = db;
     if handles.doMonitor
       
-      handles.sDI = sqrt( ( 1./handles.DM .* handles.sDI ).^2 + ((-handles.DI./handles.DM.^2).*handles.sDM ).^2 );
-
-      handles.DI  = handles.DI./handles.DM;
+      if handles.settings.doMonitorMonitor
+        handles.sDI = sqrt( ( 1./handles.DM .* handles.sDI ).^2 + ((-handles.DI./handles.DM.^2).*handles.sDM ).^2 );
+        handles.DI  = handles.DI./handles.DM;
+      elseif handles.settings.doMonitorTime
+        handles.sDI = handles.sDI./handles.DTime;
+        handles.DI  = handles.DI./handles.DTime;
+      end
  
     end
  
@@ -61,10 +65,10 @@ if handles.listDirectExists
 end
   
 
+
+%handles.experiment = merge_scans(handles.experiment);
 experiment = handles.experiment;
-
 N = length(experiment);
-
 
 handles.I        = zeros(N,1);
 handles.sI       = zeros(N,1);
@@ -113,6 +117,40 @@ handles.IQLog    = zeros(experiment{1}.imsize(1),N);
     handles.pixel_y   = zeros(M,N);
 
 
+
+% if DoMerge
+%   handles.unmerged = experiment;
+%   for i = 1:N
+%     datapoint = experiment{i};
+%    % datapoint    = processImage(datapoint);
+%     theta(i)     = datapoint.Theta;
+%     spinstate{i} = datapoint.SpinState;
+%   end
+%   [u,thetai] = unique(theta);
+% %   n=histc(theta,u);
+% %   idx = find(theta==u(n>1));
+% %   u(idx)
+%    for k = 1:length(u)
+%      datapoint = experiment{thetai(k)};
+%      newexperiment{k} = datapoint;
+%      newexperiment{k}.im = uint8(zeros(size(newexperiment{k}.im)));
+%      newexperiment{k}.Time = 0;
+%      newexperiment{k}.Monitor = 0;
+%      for i = 1:N
+%        if u(k) == theta(i) && strcmp(spinstate{k},spinstate{i})
+%          newexperiment{k}.im = newexperiment{k}.im + experiment{i}.im;
+%          newexperiment{k}.Time = newexperiment{k}.Time + experiment{i}.Time;
+%          newexperiment{k}.Monitor = newexperiment{k}.Monitor + experiment{i}.Monitor;
+%          newexperiment{k}.Theta = theta(k);
+%        end
+%      end
+%    end
+%    handles.experiment = newexperiment;
+%   
+% else
+%     handles.experiment = handles.unmerged;
+% end
+    
 %h = waitbar(0,'Processing Data files...');
 for i = 1:N
 %  waitbar(i/N,h);
@@ -128,10 +166,11 @@ for i = 1:N
     %S=confint(datapoint.GaussPeak,0.68);
     %handles.Gauss_sX0(i) = abs(datapoint.GaussPeak.b-S(1,2));
     
-    datapoint.Integr = handles.IG(i);
+    %datapoint.Integr = handles.IG(i);
   end
   
-   Q(i)          = 4*pi/handles.settings.wavelength*sind(datapoint.Theta);
+  % Q(i)          = 4*pi/handles.settings.wavelength*sind(datapoint.Theta);
+   Q(i)          = 4*pi/handles.settings.wavelength*sind(datapoint.TwoTheta/2);
   
   switch datapoint.SpinState
     case 'uu'
@@ -189,38 +228,90 @@ for i = 1:N
   % Old divergence.
   % handles.div(i)     = atand( (datapoint.SampleSlit/2 + datapoint.MonoSlit/2 )/handles.settings.MonoSlitSampleSlitD);
   handles.div(i)     = 180/pi*sqrt(1/12)*2*sqrt(2*log(2))*sqrt((datapoint.SampleSlit^2 + datapoint.MonoSlit^2)/handles.settings.MonoSlitSampleSlitD^2);
-  handles.beamw(i)   = 2*handles.settings.SampleSlitSampleD*tand(handles.div(i))+datapoint.SampleSlit;
+  handles.beamw(i)   = datapoint.SampleSlit +  handles.settings.SampleSlitSampleD/handles.settings.MonoSlitSampleSlitD.*(datapoint.SampleSlit+datapoint.MonoSlit);
+  %handles.beamw(i)   = 2*handles.settings.SampleSlitSampleD*tand(handles.div(i))+datapoint.SampleSlit;
   %handles.overill(i) = SquareIntensity(datapoint.TwoTheta,handles.settings.length,handles.beamw(i));
  % handles.overill(i) = GaussIntensity(datapoint.Theta,handles.settings.length/2,handles.settings.length/2,handles.beamw(i));
-  if handles.settings.doSquareBeam
-    handles.footprint(i) = 1/sind(datapoint.Theta).*(datapoint.SampleSlit + handles.settings.SampleSlitSampleD/handles.settings.MonoSlitSampleSlitD*(datapoint.SampleSlit+datapoint.MonoSlit));
+     handles.footprint(i) = 1/sind(datapoint.Theta).*(datapoint.SampleSlit + handles.settings.SampleSlitSampleD/handles.settings.MonoSlitSampleSlitD*(datapoint.SampleSlit+datapoint.MonoSlit));
+
+ if handles.settings.doSquareBeam
+  %  handles.footprint(i) = 1/sind(datapoint.Theta).*(datapoint.SampleSlit + handles.settings.SampleSlitSampleD/handles.settings.MonoSlitSampleSlitD*(datapoint.SampleSlit+datapoint.MonoSlit));
     handles.overill(i) = handles.settings.length/handles.footprint(i);
+    if handles.overill(i) > 1 
+      handles.overill(i) = 1;
+    end
  %  handles.overill(i) = SquareIntensity(datapoint.Theta,handles.settings.length,handles.beamw(i));
   else
-    handles.overill(i) = GaussIntensity_v2(handles.settings.length,datapoint.Theta*pi/180,handles.beamw(i)/2/sqrt(2*log(2)),3000);
+    handles.overill(i) = GaussIntensity_v2(handles.settings.length,datapoint.Theta*pi/180,handles.beamw(i)/2/sqrt(2*log(2))/2,3000);
+
   end
   experiment{i} = datapoint;
 end
 
+handles.uu = logical(handles.uu);
+handles.ud = logical(handles.ud);
+handles.du = logical(handles.du);
+handles.dd = logical(handles.dd);
+
+doMerge = 1;
+
+if handles.doCurvatureCorrect
+  start = experiment{1}.start;
+  tend  = experiment{1}.end;
+
+  Iuu = correctCurvature(handles.IQ(:,handles.uu),handles.slope,start,tend);
+  Iud = correctCurvature(handles.IQ(:,handles.ud),handles.slope,start,tend);
+  Idu = correctCurvature(handles.IQ(:,handles.du),handles.slope,start,tend);
+  Idd = correctCurvature(handles.IQ(:,handles.dd),handles.slope,start,tend);
+  handles.IQ(:,handles.uu) = Iuu;
+  handles.IQ(:,handles.ud) = Iud;
+  handles.IQ(:,handles.du) = Idu;
+  handles.IQ(:,handles.dd) = Idd;
+  
+
+  handles.I  = sum(handles.IQ(start:tend,:),1);
+  handles.I  = handles.I(:);
+  handles.sI = sqrt(handles.I(:));
+end
 
 if handles.doBackground && handles.settings.doModel
-  handles.sI = handles.sIG;
-  handles.I  = handles.IG;
+
+  handles.bI  = handles.I - handles.IG; % The background is the total intensity in the ROI minus
+                                        % the area of the Gaussian
+  handles.sbI = sqrt(handles.sIG.^2 + handles.sI.^2); 
+  handles.sI  = handles.sIG;
+  handles.I   = handles.IG;
+ 
 end
 
 if handles.doMonitor
-  handles.sI = sqrt( handles.sI.^2./handles.M.^2 + (handles.I./handles.M.^2.*handles.sM).^2 );
-  handles.I  = handles.I./handles.M;
-  Mall = repmat(handles.M,[1 experiment{1}.imsize(1)])';
-  handles.IQ = handles.IQ./Mall;
+  if handles.settings.doMonitorMonitor
+    
+    handles.sI = sqrt( handles.sI.^2./handles.M.^2 + (handles.I./handles.M.^2.*handles.sM).^2 );
+    handles.I  = handles.I./handles.M;
+    
+    handles.sbI = sqrt( handles.sbI.^2./handles.M.^2 + (handles.bI./handles.M.^2.*handles.sM).^2 );
+    handles.bI  = handles.bI./handles.M;
+    
+    Mall = repmat(handles.M,[1 experiment{1}.imsize(1)])';
+    handles.IQ = handles.IQ./Mall;
+    
+    handles.theIQmin = handles.theIQmin(:)./handles.M(:);
+    handles.theIQmax = handles.theIQmax(:)./handles.M(:);
+  elseif handles.settings.doMonitorTime
 
-  size(handles.theIQmin)
-  size(handles.M)
-  handles.theIQmin = handles.theIQmin(:)./handles.M(:);
-  handles.theIQmax = handles.theIQmax(:)./handles.M(:);
-
-  handles.sbI = sqrt( handles.sbI.^2./handles.M.^2 + (handles.bI./handles.M.^2.*handles.sM).^2 );
-  handles.bI  = handles.bI./handles.M;
+    handles.sI = handles.sI./handles.Time;
+    handles.I  = handles.I./handles.Time;
+    
+    handles.sbI = handles.sbI./handles.Time;
+    handles.bI  = handles.bI./handles.Time;
+    
+    Mall = repmat(handles.Time,[1 experiment{1}.imsize(1)])';
+    handles.IQ = handles.IQ./Mall;
+    
+    handles.theIQmin = handles.theIQmin(:)./handles.Time(:);
+    handles.theIQmax = handles.theIQmax(:)./handles.Time(:);
+  end
 end
 
 if handles.doOverIllumination
@@ -229,10 +320,7 @@ if handles.doOverIllumination
   handles.sI = handles.sI./(handles.overill+eps);
 end
 
-handles.uu = logical(handles.uu);
-handles.ud = logical(handles.ud);
-handles.du = logical(handles.du);
-handles.dd = logical(handles.dd);
+
 
 if handles.doNormalize
   
@@ -286,16 +374,42 @@ if handles.doNormalize
   sDIfdd = zeros(size(sdd));  
   
 
-   
+  k = 0;
+  DIuu_avg = 0;
+  Dsuu_avg = 0;
+  sDIuu_avg = 0;
+  for i = 1:length(Dsuu)
+    % If we haven't seen his slit before
+    idx = find(Dsuu(i) == Dsuu_avg);
+    if isempty(idx)
+      k = k + 1;
+      DIuu_avg(k)  = DIuu(i);
+      sDIuu_avg(k) = sDIuu(i);
+      Dsuu_avg(k)  = Dsuu(i);
+    else
+      DIuu_avg(idx)  = (DIuu_avg(idx) + DIuu(i))/2;
+      sDIuu_avg(idx) = sqrt(0.5^2*sDIuu(i)^2 + 0.5^2*sDIuu_avg(idx)^2);
+    end
+  end
+  
   % suu(i) is sample slit for each data point
   % Dsuu is Direct beam sample slit for each direct beam point
   % TODO: Make this work for all modes of polarization
   for i = 1:length(suu)
- % unique(Dsuu)
- % suu(i)
- % pause
-    DIfuu(i)  = DIuu( unique(Dsuu) == suu(i));
-    sDIfuu(i) = sDIuu(unique(Dsuu) == suu(i));
+  unique(Dsuu)
+  suu(i)
+  unique(Dsuu) == suu(i)
+  DIuu(unique(Dsuu) == suu(i))
+  if isempty(DIuu(unique(Dsuu) == suu(i)))
+    idx = find(unique(Dsuu) >= suu(i));
+    DIfuu(i) = DIuu_avg(idx(1));
+    sDIuu(i) = sDIuu_avg(idx(1));
+  else
+    DIfuu(i) =  DIuu_avg( Dsuu_avg == suu(i));
+    sDIuu(i) = sDIuu_avg( Dsuu_avg == suu(i));
+  end
+   % DIfuu(i)  = DIuu( unique(Dsuu) == suu(i));
+   % sDIfuu(i) = sDIuu(unique(Dsuu) == suu(i));
 
   end
 
@@ -305,6 +419,8 @@ if handles.doNormalize
     DIdd = DIuu;
     sDIdd = sDIuu;
   end
+  
+  
 
   for i = 1:length(sdu)
     DIfdu(i)  = DIdd( unique(Dsdu) == sdu(i));
@@ -386,17 +502,30 @@ handles.ThetaOffset = cf.b;
 handles.Q = handles.Q - sind(cf.b)*4*pi/handles.settings.wavelength;
 end
 
+% doAverage = 1;
+% 
+% if doAverage
+%   
+%   [finalQ,idx] = unique(Q);
+%   for i = 1:length(finalQ)
+%     finalI(i) = mean(handles.I(Q==finalQ(i)));
+%     sfinalI(i) = sqrt(sum(handles.sI(Q==finalQ(i)).^2));
+%   end
+%   handles.Q  = finalQ;
+%   handles.I  = finalI;
+%   handles.sI = sfinalI;
+%   handles.Time = handles.Time(idx);
+%   
+% end
 
-handles.dII  = handles.sI./handles.I;
-handles.newTime = (handles.dII./0.09).*handles.Time;
+%handles.dII  = handles.sI./handles.I;
+%handles.newTime = (handles.dII./0.09).*handles.Time;
 
 
-      
-
+      % Need to update it
 handles.experiment = experiment;
 
-
-if ~isempty(handles.experiment)
+if ~isempty(experiment)
 
       mm_per_pixel = handles.settings.DW/m; % m is number of pixels in the x direction, always 1400
 
@@ -421,7 +550,9 @@ if ~isempty(handles.experiment)
       L_pixel        = H_pixel - ROI_center_x;
       L_mm           = L_pixel*mm_per_pixel;
 
-
+      L_mm_start = (experiment{1}.start-ROI_center_x)*mm_per_pixel;
+      L_mm_stop  = (experiment{1}.end-ROI_center_x)*mm_per_pixel;
+      
       % L_pixel is the distance in pixels from TwoTheta=0
       % L_mm is the distance in mm from TwoTheta=0
 
@@ -429,6 +560,8 @@ if ~isempty(handles.experiment)
       % the direct beam, with twotheta=0 at the ROI_center_x
 
       gamma = -atand(L_mm/handles.settings.SD);
+      gamma_start = -atand(L_mm_start/handles.settings.SD);
+      gamma_stop  = -atand(L_mm_stop/handles.settings.SD);
 
       % The current TwoTheta range is Twotheta for the current point.
       % experiment{i}.TwoTheta is the motor position of twotheta, which we
@@ -457,9 +590,11 @@ if ~isempty(handles.experiment)
       handles.Qx(:,i) = 2*pi/handles.settings.wavelength*(cosd(alpha) - cosd(beta));
       handles.Qz(:,i) = 2*pi/handles.settings.wavelength*(sind(alpha) + sind(beta)); 
       
-    
+      %handles.Qz_ROI = 2*pi/handles.settings.wavelength*(sind(alpha) + sind(alpha+gamma_start)); 
+      
       k0     = 2*pi/handles.settings.wavelength;
       uk0    = -k0*0.005; % uk0 is k0*(delta Lambda/Lambda)
+      ddLambda = 0.007;
       % Our estimate at the moment is that deltaLambda = 0.005
       
       ualpha = handles.div*pi/180; % radians
@@ -473,10 +608,31 @@ if ~isempty(handles.experiment)
       handles.sQz(:,i) = sqrt( k0^2*(cosd(alpha).^2.*ualpha(i).^2 + cosd(beta).^2.*ubeta.^2) ...
                   + uk0^2.*(sind(alpha) + sind(beta)).^2 );
                 
-      handles.sQz_specular(i) = sqrt( k0^2.*cosd(alpha).^2.*(ualpha(i).^2 + ubeta.^2) ...
-                  + 4*uk0^2.*sind(alpha).^2 );
+            
+    %  handles.sQz_specular(i) = sqrt( k0^2.*cosd(alpha).^2.*(ualpha(i).^2 + ubeta.^2) ...
+    %              + 4*uk0^2.*sind(alpha).^2 );
                 
-      handles.sQx_specular(i) = sqrt( k0^2.*sind(alpha).^2.*(ualpha(i).^2 + ubeta.^2));
+      ualphasqr = 0.68^2*( (datapoint.SampleSlit.^2 + ...
+        datapoint.MonoSlit.^2)./handles.settings.MonoSlitSampleSlitD.^2);
+      
+      ubetasqr = (0.68*datapoint.SampleSlit/(handles.settings.SampleSlitSampleD+handles.settings.SD))^2 + ...
+        (2.8/(handles.settings.SampleSlitSampleD+handles.settings.SD))^2;
+      
+      if ualphasqr > ubetasqr
+        ualphasqr =  ubetasqr;
+      end
+      
+      Q(i) = 4*pi/handles.settings.wavelength*sind(alpha);
+     
+      
+      %handles.sQz_specular(i)   = sqrt(k0^2*cosd(alpha).^2.*ualphasqr + ddLambda.^2.*Q(i).^2); 
+      %handles.sQz_specular(i)   = sqrt(k0^2*sind(alpha)^2.*cosd(alpha).^2./sind(alpha).^2.*ualphasqr + ddLambda.^2.*Q(i).^2);
+      %handles.sQz_specular(i)   = sqrt(1/4*Q(i).^2.*cotd(alpha).^2.*ualphasqr + ddLambda.^2.*Q(i).^2);
+      handles.sQz_specular(i)   = Q(i)/2.*sqrt(cotd(alpha+eps).^2.*ualphasqr + 4*ddLambda.^2);
+      handles.sdQQz_specular(i) = sqrt( ualphasqr./(alpha*pi/180)^2  + ddLambda.^2./handles.settings.wavelength^2);
+      handles.sdQQz_specular(i) = handles.sdQQz_specular(i).*Q(i);  
+      
+      handles.sQx_specular(i) = sqrt( k0^2.*sind(alpha).^2.*(ualphasqr + ubetasqr));
                 
       handles.lx = 2*pi./handles.sQx_specular;
       handles.lz = 2*pi./handles.sQz_specular;
@@ -487,29 +643,31 @@ if ~isempty(handles.experiment)
 
  
     end
+
     handles.IQLog = log10(handles.IQ+eps);
-    A = handles.IQ(:,handles.uu);
+
+   % A = handles.IQ(:,handles.uu);
    
-    size(A)
+   % size(A)
    % theta = handles.Theta(handles.uu);
-   save('Intensity.dat','A','-ascii');
+   %save('Intensity.dat','A','-ascii');
    % save('Theta.dat','theta','-ascii');
     
     
-    N  = length(handles.I);
-    sqz = zeros(N,1);
-
-    for k = 1:N
-      id_x    = find(handles.Qx(:,k)>=0);
-      cqx     = handles.Qx(id_x,k);
-      csqz    = handles.sQz(id_x,k);
-      
-      [~,id] = min(cqx);
-      
-      sqz(k)   = csqz(id(1));
-    end
-
-    handles.dQZ  =  sqz;
+%     N  = length(handles.I);
+%     sqz = zeros(N,1);
+% 
+%     for k = 1:N
+%       id_x    = find(handles.Qx(:,k)>=0);
+%       cqx     = handles.Qx(id_x,k);
+%       csqz    = handles.sQz(id_x,k);
+%       
+%       [~,id] = min(cqx);
+%       
+%       sqz(k)   = csqz(id(1));
+%     end
+% 
+%     handles.dQZ  =  sqz;
  
  if 0
   Qxmin = -2e-5;
@@ -617,7 +775,7 @@ function datapoint = processImage(datapoint)
       datapoint.sbIntegr = sqrt( (0.5*sum(sum(datapoint.imb1))).^2 + (0.5*sum(sum(datapoint.imb2))).^2);
       datapoint.Integr   = datapoint.Integr - datapoint.bIntegr*dpixelarea/(bpixelarea1+bpixelarea2);
       datapoint.sIntegr  = sqrt( (datapoint.sIntegr)^2 + (datapoint.sbIntegr*(dpixelarea/(bpixelarea1+bpixelarea2)))^2 );     
-        
+  
     end
     
     datapoint.allproject = Xi;

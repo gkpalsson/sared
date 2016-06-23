@@ -9,3 +9,5 @@ t2 = sqrt(2.0);
 t3 = 1.0./sigma.^2;
 t4 = sqrt(t3);
 Ifinal = erf(L.*t2.*t4.*sin(alpha).*(1.0./4.0))./erf(t2.*t4.*tm.*(1.0./2.0));
+Ifinal(Ifinal>1) = 1;
+end

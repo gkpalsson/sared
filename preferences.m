@@ -22,7 +22,7 @@ function varargout = preferences(varargin)
 
 % Edit the above text to modify the response to help preferences
 
-% Last Modified by GUIDE v2.5 24-Nov-2014 09:44:20
+% Last Modified by GUIDE v2.5 15-Jul-2015 14:10:29
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -53,8 +53,14 @@ function preferences_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for preferences
 handles.output = hObject;
-se = load('settings.mat');
-
+%if isdeployed
+ %   se = load(fullfile(ctfroot,'Documents/cycle143/Reduction/v0.5_newh5','settings.mat'));
+    
+     if isdeployed
+       se = load(fullfile(ctfroot,'sared','settings.mat'));
+else
+    se = load('settings.mat');
+end
 
 handles.settings = se;
 set(handles.edtwavelength, 'String',num2str(se.wavelength));
@@ -72,11 +78,18 @@ set(handles.edtfp,'String',num2str(se.fp));
 set(handles.edtfa,'String',num2str(se.fa));
 set(handles.edtSD,'String',num2str(se.SD));
 set(handles.edtDW,'String',num2str(se.DW));
+set(handles.edtSSdistance,'String',num2str(se.SampleSlitSampleD));
+set(handles.edtMSdistance,'String',num2str(se.MonoSlitSampleSlitD));
+
 
 set(handles.edtup,'String',num2str(se.up));
 set(handles.edtua,'String',num2str(se.ua));
 set(handles.edtufa,'String',num2str(se.fa));
 set(handles.edtufp,'String',num2str(se.fp));
+set(handles.rdoMonitor,'Value',se.doMonitorMonitor);
+set(handles.rdoTime,'Value',se.doMonitorTime);
+set(handles.chkShowFitting,'Value',se.doFitRefresh);
+
 
 
 % Update handles structure
@@ -154,7 +167,6 @@ function btndontsave_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 
-
 % --- Executes on button press in btnsave.
 function btnsave_Callback(hObject, eventdata, handles)
 % hObject    handle to btnsave (see GCBO)
@@ -187,7 +199,17 @@ settings.DW         = str2num(get(handles.edtDW,'String'));
 settings.SampleSlitSampleD   = str2num(get(handles.edtSSdistance,'String'));
 settings.MonoSlitSampleSlitD = str2num(get(handles.edtMSdistance,'String'));
 
-save('settings.mat','-struct','settings');
+settings.doMonitorMonitor = get(handles.rdoMonitor,'Value');
+settings.doMonitorTime    = get(handles.rdoTime,'Value');
+settings.doFitRefresh     = get(handles.chkShowFitting,'Value');
+%if isdeployed
+%    save(fullfile(ctfroot,'Documents/cycle143/Reduction/v0.5_newh5','settings.mat'),'-struct','settings');
+if isdeployed
+      save(fullfile(ctfroot,'sared','settings.mat'),'-struct','settings');
+else
+    save('settings.mat','-struct','settings');
+end
+
 close;
 
 %initialize_gui(gcbf, handles, true);
@@ -794,3 +816,12 @@ function chkGaussBeam_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of chkGaussBeam
+
+
+% --- Executes on button press in chkShowFitting.
+function chkShowFitting_Callback(hObject, eventdata, handles)
+% hObject    handle to chkShowFitting (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of chkShowFitting

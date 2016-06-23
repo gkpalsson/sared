@@ -147,7 +147,7 @@ function hh = ploterr(x, y, xerr, yerr, varargin)
 %  v1.1.2, February 2009: added abshh properties to set handle sizes as
 %          absolute values
 %
-%   Felix Zörgiebel
+%   Felix Z?rgiebel
 %   email: felix_z -> web.de
 %   Date: 12/03/2008
 
@@ -279,7 +279,7 @@ if ~isempty(yl) % y errorbars
     h = [plotfct(barx,bary,esymbol);h]; hold on
 end
 if ~isempty(y) % function values
-    h = [plotfct(x,y,symbol);h];
+    h = [plotfct(x,y,symbol,'Color',get(h(1),'Color'));h];
 end
 
 if ~hold_state, hold off; end
@@ -387,7 +387,7 @@ if isempty(errmsg)
     A=A(2:end); % skip symbol for properties
 end
 n=length(A);
-A=[A '!"§$%&()=?']; % append some stupid string for the case that the last property comes without a value
+A=[A '!"?$%&()=?']; % append some stupid string for the case that the last property comes without a value
 idx=1;
 while idx <= n
     prop=A{idx};

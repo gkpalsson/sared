@@ -15,13 +15,22 @@ scalerskeys  = {'/instrument/scalers/SPEC_counter_mnemonics','/instrument/scaler
 fname = fname{1};
 fname = char(fname);
 
-Scanname = ['S',fname(end-7:end-3)];
+%Scanname = ['S',fname(end-7:end-3)];
+Scanname = h5info(fname,'/');
+Scanname = Scanname.Groups.Name(2:end);
 
 %a = hdf5info(fname)
 aname = h5info(fname,'/');
 RunName = aname.Groups.Name;
 
+inf = h5info(fname,[RunName,'/']);
+% An h5 file without any datasets in the root, doesn't even have a revision
+% so I will assign it to version 1.8
+if isempty(inf.Datasets)
+  inf = 1.8;
+else
 inf = hdf5read(fname,[RunName,'/revision']);
+end
 if inf >= 1.9
   disp('Version 1.9')
   info = h5info(fname,[RunName,'/instrument/detectors']);
@@ -34,20 +43,72 @@ dets = info.Groups;
 inforoi = h5info(fname,[RunName,'/instrument/scalers/']);
 [Mroi,Nroi] = size(inforoi.Groups);
 
-%a.GroupHierarchy.Groups.Groups
-if Md == 2
-  Im_uu = hdf5read(fname,[Scanname,'/instrument/detectors/psd/data']);
+predata = hdf5read(fname,[Scanname,'/instrument/scalers/data']);
+
+notuu = sum(predata(8+1,:))==0;
+notud = sum(predata(11+1,:))==0;
+notdu = sum(predata(10+1,:))==0;
+notdd = sum(predata(9+1,:))==0;
+
   Im_ud = [];
   Im_du = [];
   Im_dd = [];
-elseif Md == 3
-  Im_du = uint8(hdf5read(fname,[Scanname,'/instrument/detectors/psd_du/data']));
+  Im_uu = [];
+  
+
+if ~notuu
   Im_uu = uint8(hdf5read(fname,[Scanname,'/instrument/detectors/psd_uu/data']));
-  Im_ud = [];
-  Im_dd = [];
-%  Im_ud = uint8(hdf5read(fname,[Scanname,'/instrument/detectors/psd_ud/data']));
-%  Im_uu = uint8(hdf5read(fname,[Scanname,'/instrument/detectors/psd_uu/data']));
- end
+end
+
+if ~notud
+  Im_ud = uint8(hdf5read(fname,[Scanname,'/instrument/detectors/psd_ud/data']));
+end
+
+if ~notdu
+  Im_du = uint8(hdf5read(fname,[Scanname,'/instrument/detectors/psd_du/data']));
+end
+
+if ~notdd
+  Im_dd = uint8(hdf5read(fname,[Scanname,'/instrument/detectors/psd_dd/data']));
+end
+
+% Unpolarized
+if notdd && notdu && notud && notuu
+  Im_uu = uint8(hdf5read(fname,[Scanname,'/instrument/detectors/psd/data']));
+end
+
+
+
+%a.GroupHierarchy.Groups.Groups
+% if Md == 2
+%   Im_uu = hdf5read(fname,[Scanname,'/instrument/detectors/psd/data']);
+%   Im_ud = [];
+%   Im_du = [];
+%   Im_dd = [];
+% elseif Md == 3
+%   Im_du = uint8(hdf5read(fname,[Scanname,'/instrument/detectors/psd_du/data']));
+%   Im_uu = uint8(hdf5read(fname,[Scanname,'/instrument/detectors/psd_uu/data']));
+%   Im_ud = [];
+%   Im_dd = [];
+% %  Im_ud = uint8(hdf5read(fname,[Scanname,'/instrument/detectors/psd_ud/data']));
+% %  Im_uu = uint8(hdf5read(fname,[Scanname,'/instrument/detectors/psd_uu/data']));
+% elseif Md == 4
+%   Im_du = uint8(hdf5read(fname,[Scanname,'/instrument/detectors/psd_du/data']));
+%   Im_uu = uint8(hdf5read(fname,[Scanname,'/instrument/detectors/psd_uu/data']));
+%   Im_dd = uint8(hdf5read(fname,[Scanname,'/instrument/detectors/psd_dd/data']));
+%   Im_ud = [];
+% %  Im_ud = uint8(hdf5read(fname,[Scanname,'/instrument/detectors/psd_ud/data']));
+% %  Im_uu = uint8(hdf5read(fname,[Scanname,'/instrument/detectors/psd_uu/data']));
+% else
+% 
+%   Im_du = uint8(hdf5read(fname,[Scanname,'/instrument/detectors/psd_du/data']));
+%   Im_uu = uint8(hdf5read(fname,[Scanname,'/instrument/detectors/psd_uu/data']));
+%   Im_dd = uint8(hdf5read(fname,[Scanname,'/instrument/detectors/psd_dd/data']));
+%   Im_ud = uint8(hdf5read(fname,[Scanname,'/instrument/detectors/psd_ud/data']));
+% %  Im_ud = uint8(hdf5read(fname,[Scanname,'/instrument/detectors/psd_ud/data']));
+% %  Im_uu = uint8(hdf5read(fname,[Scanname,'/instrument/detectors/psd_uu/data']));
+% 
+%  end
 motors = hdf5read(fname,[Scanname,motorkeys{3}]);
 
 idx = find(motors(13,:)>0);
@@ -133,34 +194,34 @@ else
 end
 
 
-if strcmp(Scanname(2:end),'00368') || strcmp(Scanname(2:end),'00369')
-  if O2 < max(idx)
-    arrayidx = O2;
-  else
-    arrayidx = idx;
-  end
-  
-  
-  inst.im_uu   = Im_ud(:,:,arrayidx);
-  if O1 < max(idx)
-    arrayidx = O1;
-  else
-    arrayidx = idx;
-  end
-  inst.im_du   = Im_uu(:,:,arrayidx);
-  if O3 < max(idx)
-    arrayidx = O3;
-  else
-    arrayidx = idx;
-  end
-  inst.im_ud   = Im_du(:,:,arrayidx);
-  if O4 < max(idx)
-    arrayidx = O4;
-  else
-    arrayidx = idx;
-  end
-  inst.im_dd   = Im_dd(:,:,arrayidx);
-else
+% if strcmp(Scanname(2:end),'00368') || strcmp(Scanname(2:end),'00369')
+%   if O2 < max(idx)
+%     arrayidx = O2;
+%   else
+%     arrayidx = idx;
+%   end
+%   
+%   
+%   inst.im_uu   = Im_ud(:,:,arrayidx);
+%   if O1 < max(idx)
+%     arrayidx = O1;
+%   else
+%     arrayidx = idx;
+%   end
+%   inst.im_du   = Im_uu(:,:,arrayidx);
+%   if O3 < max(idx)
+%     arrayidx = O3;
+%   else
+%     arrayidx = idx;
+%   end
+%   inst.im_ud   = Im_du(:,:,arrayidx);
+%   if O4 < max(idx)
+%     arrayidx = O4;
+%   else
+%     arrayidx = idx;
+%   end
+%   inst.im_dd   = Im_dd(:,:,arrayidx);
+% else
   if O1 < max(idx)
     arrayidx = O1;
   else
@@ -185,12 +246,13 @@ else
     arrayidx = idx;
   end
   inst.im_dd   = Im_dd(:,:,arrayidx);
-end
+%end
 
 [M1,N1,O1] = size(inst.im_uu);
 [M2,N2,O2] = size(inst.im_du);
 [M3,N3,O3] = size(inst.im_ud);
 [M4,N4,O4] = size(inst.im_dd);
+
 
 
 if O1 == 1
@@ -471,5 +533,6 @@ end
 % 
 % inst.project  = sum(Im,1);
 toc
+fclose all;
 
 end

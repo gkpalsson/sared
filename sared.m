@@ -22,7 +22,7 @@ function varargout = sared(varargin)
 
 % Edit the above text to modify the response to help sared
 
-% Last Modified by GUIDE v2.5 16-Jan-2015 14:37:15
+% Last Modified by GUIDE v2.5 27-Aug-2015 15:52:35
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -43,11 +43,21 @@ else
 end
 % End initialization code - DO NOT EDIT
 
+
   function handles = reInitialize(handles,hObject)
-    handles.preferences = preferences('Visible','off');
-    settings            = load('settings.mat');
-    
-    handles.settings     = settings;
+   
+      % Win 64
+     % if isdeployed
+      %    settings = load(fullfile(ctfroot,'Documents/cycle143/Reduction/v0.5_newh5','settings.mat'));
+          % MAC
+              if isdeployed
+                  settings = load(fullfile(ctfroot,'sared','settings.mat'));
+      else
+          settings = load('settings.mat');
+      end
+    handles.settings    = settings;
+    get(handles.lstFiles,'Position')
+    set(handles.lstFiles,'Position',[0.0284    0.2780    0.9291*3    0.6591]);
     
     handles.ReflPlot1    = 'Integrated Intensity';
     handles.ReflPlot2    = '';
@@ -87,10 +97,11 @@ end
     
     handles.isMakingROI = 0;
     handles.isMakingBROI = 0;
+    handles.slope = 0;
    
     
     %handles.dropdReflString  = {'Integrated Intensity','Fitted Intensity','Monitor','Background','Gauss TwoTheta','Temperature','Magnetic Field'};
-    handles.dropdReflString2  = {'None','Monitor','Time','ISpecular',...
+    handles.dropdReflString2  = {'None','Monitor','Time','dQQz',...
       'Sample slit width','First slit width','Divergence','Beam width at sample',...
       'dq_x specular','dq_z specular','Coherence length x','Coherence length z'};
     
@@ -135,6 +146,8 @@ end
     themap = load('maps/ColdFire.map');
     handles.kxkzmap = colormap(themap/255);
     handles.SampleLength = handles.settings.length;
+    handles.wavelength = handles.settings.wavelength;
+
     set(handles.popColor,'String',dropdkxkzColor);
     set(handles.popColor','Value',12);
     axes(handles.rawaxes);
@@ -142,7 +155,7 @@ end
     ylabel('V Detector Position [pixel]');
     handles.mnuFitDataString = {'None'};
     set(handles.mnuFit,'String',handles.mnuFitDataString);
-    length(handles.mnuFitDataString)
+
     set(handles.mnuFit,'Value',length(handles.mnuFitDataString));
     %axes(handles.projectedaxes);
     %xlabel('H Detector Position [pixel]');
@@ -174,6 +187,7 @@ end
     handles.doBackground = 0;
     handles.doThetaOffset = 0;
     handles.doOverIllumination = 0;
+    handles.doCurvatureCorrect = 0;
     handles.hasPopulated_bkg = 0;
     handles.currentList = 'data';
     handles.doNormalize = 0;
@@ -328,7 +342,7 @@ theLayer.thick = 1e5;
 theLayer.rough = 0;
 theLayer.dens  = 3.58;
 theLayer.chem  = 'Mg1O1';
-handles.wavelength = handles.settings.wavelength;
+
 handles.Probe = 2;
 
 [theLayer.sld,theLayer.ndens] = getSLD(theLayer.chem,theLayer.dens,handles.wavelength,handles.Probe);
@@ -929,8 +943,11 @@ function handles = LoadImageList(handles)
   end
   handles = package_process(handles);
   %set(handles.lstFiles,'string',handles.ListOfImageNames);
-  
-  set(handles.lstFiles,'string',num2str(handles.Theta));
+  str{length(handles.Theta)} = '';
+  for i = 1:length(handles.Theta)
+    str{i} = ['th: ',num2str(handles.Theta(i)),' sl2hg: ',num2str(handles.SampleSlit(i))];
+  end
+  set(handles.lstFiles,'string',str);
   get(handles.lstFiles,'value');
   set(handles.lstFiles,'value',get(handles.lstFiles,'value'));
   %a = handles.ListOfPathNames;
@@ -1031,62 +1048,36 @@ function chkAllGauss_Callback(hObject, eventdata, handles)
 
 
 function handles = drawkxkz(handles)
-
-axes(handles.kxkzaxes);
-hold(handles.kxkzaxes,'on');
-
-ch = get(handles.kxkzaxes,'Children');
-
-if isempty(ch)
-  h = pcolor(handles.kxkzaxes,handles.KXKZ_CurrentXData1,handles.KXKZ_CurrentXData2,handles.KXKZ_CurrentYData);
-  set(h,'EdgeColor','none');
-  colorbar('peer',handles.kxkzaxes);
-  handles.thekxkzmap=colormap(handles.kxkzaxes,handles.kxkzmap);
-%  set(handles.kxkzaxes,'Clim',[min(handles.theIQmin),max(handles.theIQmax)]);
-  set(handles.kxkzaxes,'Clim',[log10(min(handles.theIQmin)/1000+eps), log10(max(handles.theIQmax))+eps]);
+  cla(handles.kxkzaxes);
+  %axes(handles.kxkzaxes);
+  exp = handles.experiment;
  
-%   currentQx = handles.KXKZ_CurrentXData1;
-%   currentQz = handles.KXKZ_CurrentXData2;
-%   sQx = handles.sQx(:,handles.KXKZ_CurrentSpinhandle);
-%   sQz = handles.sQz(:,handles.KXKZ_CurrentSpinhandle);
-% 
-%   [m,n] = size(currentQx);
-%   %id = find(currentQx(:,40)>=0);
-%   tid = find(currentQx(:,round(n/2))>=0);
-%   cqx = currentQx(tid,round(n/2));
-%   cqz = currentQz(tid,round(n/2));
-% 
-%   sqx = sQx(tid,round(n/2));
-%   sqz = sQz(tid,round(n/2));
-%   
-%   [mi,id] = min(cqx);
-%   %plot(handles.kxkzaxes,currentQx(:,40),currentQz(:,40),'-y','LineWidth',2);  
-%   %plot(handles.kxkzaxes,cqx,cqz,'-r','LineWidth',2);  
-% 
-%   W = sqx(id(1))
-%   H = sqz(id(1))
-%   X = cqx(id(1));
-%   Y = cqz(id(1));
-%   X = cqx(id(1))-W/2
-%   Y = cqz(id(1))-H/2
-%   handles.resROI   = rectangle('Position',[X,Y,W,H],'Curvature',[1,1]);
-%   set(handles.resROI,'EdgeColor','r','LineWidth',2);
-
-else
-  set(ch(end),'XData',handles.KXKZ_CurrentXData1,'YData',handles.KXKZ_CurrentXData2,'ZData',handles.KXKZ_CurrentYData,'CData',handles.KXKZ_CurrentYData);
-
-  set(handles.kxkzaxes,'Clim',[log10(min(handles.theIQmin)/1000+eps), log10(max(handles.theIQmax))+eps]);
-  %  set(ch(1),'XData',handles.KXKZ_CurrentXData1(:,handles.currentItem),'YData',handles.KXKZ_CurrentXData2(:,handles.currentItem));
-end
-%axis(handles.kxkzaxes,[-Inf Inf 0 0.6 ]);
-xlabel(handles.kxkzaxes,handles.kxkzXLabel);
-ylabel(handles.kxkzaxes,handles.kxkzYLabel);
-handles.thekxkzmap=colormap(handles.kxkzaxes,handles.kxkzmap);
-%daspect(handles.kxkzaxes,[1 10 1]);
-
-
-%axis(handles.kxkzaxes,'auto');
-
+ 
+   h = pcolor(handles.kxkzaxes,handles.KXKZ_CurrentXData1,handles.KXKZ_CurrentXData2,handles.KXKZ_CurrentYData);
+   %   hold(handles.kxkzaxes,'on');
+   set(h,'EdgeColor','none');
+   colorbar('peer',handles.kxkzaxes);
+      set(handles.kxkzaxes,'Clim',[log10(min(handles.theIQmin)/1000+eps), log10(max(handles.theIQmax))+eps]);
+    if strcmp(handles.KXKZXScaleState, 'pixel, data points')
+     hold(handles.kxkzaxes,'on');
+    if exp{1}.hasROI
+      rectangle('Position',[exp{1}.start, 1, exp{1}.end-exp{1}.start,length(exp)-1],'Parent',handles.kxkzaxes);
+    end
+    if exp{1}.hasBackROI
+      
+      rectangle('Position',[exp{1}.bstart, 1, exp{1}.bend-exp{1}.bstart,length(exp)-1],'EdgeColor','b','LineWidth',1);
+    elseif exp{1}.hasBackROI_2
+      rectangle('Position',[exp{1}.b21start, 1, exp{1}.b21end-exp{1}.b21start,length(exp)-1],'EdgeColor','b','LineWidth',1,'Parent',handles.kxkzaxes);
+      rectangle('Position',[exp{1}.b22start, 1, exp{1}.b22end-exp{1}.b22start,length(exp)-1],'EdgeColor','b','LineWidth',1,'Parent',handles.kxkzaxes);
+    end
+   end
+   
+   xlabel(handles.kxkzaxes,handles.kxkzXLabel);
+   ylabel(handles.kxkzaxes,handles.kxkzYLabel);
+   %view(handles.kxkzaxes,0,0);
+   % [m,n] = size(handles.KXKZ_CurrentYData);
+   % plot3(handles.kxkzaxes,1:n,handles.I(handles.uu));
+   handles.thekxkzmap=colormap(handles.kxkzaxes,handles.kxkzmap);
 
 function handles = drawRefl(handles)
     
@@ -1245,6 +1236,7 @@ function handles = drawRaw(handles)
         end
       otherwise
     end
+   
     
     handles.currentItem = idx;
     axes(handles.projectedaxes);
@@ -1253,11 +1245,13 @@ function handles = drawRaw(handles)
     uproject = texp{idx}.uproject';
     y        = texp{idx}.project';
     
-    nonexcluded = find(texp{idx}.project' > 0);
-    
-    xn = pixel(nonexcluded)';
-    yn = y(nonexcluded);
-    un = uproject(nonexcluded);
+    %nonexcluded = find(texp{idx}.project' > 0);
+    xn = pixel';
+    yn = y;
+    un = uproject;
+    %xn = pixel(nonexcluded)';
+    %yn = y(nonexcluded);
+    %un = uproject(nonexcluded);
     
     ch = get(handles.projectedaxes,'children');
     
@@ -1265,6 +1259,7 @@ function handles = drawRaw(handles)
       %errorbar(xn,yn,un,'bo','MarkerFaceColor','b');
       % h=ploterr(X1,Y1,[],sY1,handles.Refl1Marker,'logy','hhy',0.5);
       h = ploterr(xn,yn,[],un,'-o','logy','hhy',0.5);
+      
       set(h(1),'MarkerFaceColor',get(h(1),'Color')), set(h(2),'Color',get(h(1),'Color'));
       % set(h,'MarkerFaceColor',get(h,'Color'));
       % newErrorbar(xn,yn,un,'bo','MarkerFaceColor','b');
@@ -1290,7 +1285,7 @@ function handles = drawRaw(handles)
     if texp{idx}.hasGaussFit
       S.X = xn;
       %model = feval(texp{idx}.GaussPeak,S);
-      mod = model(texp{idx}.GaussPeak,S);
+      mod = model_1peak(texp{idx}.GaussPeak,S);
       title(['\chi^2/DOG = ',num2str(texp{idx}.redchisqr)]);
       
       ch = get(handles.projectedaxes,'children');
@@ -1313,9 +1308,15 @@ function handles = drawRaw(handles)
     if isempty(ch)
       colormap(handles.rawaxes,handles.kxkzmap);
       %image(handles.RawCurrentXData1,handles.RawCurrentXData2,handles.RawCurrentCData);
-      
-      h=pcolor(handles.RawCurrentAllXData1,handles.RawCurrentAllXData2,handles.RawCurrentCData);
-      set(h,'EdgeColor','none');
+      imagesc(handles.RawCurrentAllXData1,handles.RawCurrentAllXData2,handles.RawCurrentCData);
+
+      %handles.hDetectorRect   = imrect(handles.rawaxes,state.hDetectorRectPos);
+%setColor(handles.hDetectorRect,[0.5 0.5 0.5]);
+%setResizable(handles.hDetectorRect,0);
+%fcn = makeConstrainToRectFcn('imrect',[state.hDetectorRectPos(1) state.hDetectorRectPos(1)+state.hDetectorRectPos(3)],[state.hDetectorRectPos(2) state.hDetectorRectPos(2)+state.hDetectorRectPos(4)]);
+%setPositionConstraintFcn(handles.hDetectorRect,fcn);
+     % h=pcolor(handles.RawCurrentAllXData1,handles.RawCurrentAllXData2,handles.RawCurrentCData);
+     % set(h,'EdgeColor','none');
 %       if handles.rawplotscale
 %         set(handles.rawaxes,'Clim',[-1, max(max(handles.RawCurrentCData))+2]);
 %        % set(handles.rawaxes,'Clim',[min(min(handles.RawCurrentCData)), max(max(handles.RawCurrentCData))]);
@@ -1336,8 +1337,21 @@ function handles = drawRaw(handles)
       %h=pcolor(handles.RawCurrentAllXData1,handles.RawCurrentAllXData2,handles.RawCurrentCData);
       %set(h,'EdgeColor','none');
       %handles.rawcbar = colorbar('peer',handles.rawaxes,'Location','NorthOutside');
-    set(ch(end),'XData',handles.RawCurrentAllXData1,'YData',handles.RawCurrentAllXData2,'ZData',handles.RawCurrentCData,'CData',handles.RawCurrentCData);
-      %if handles.rawplotscale
+   % set(ch(end),'XData',handles.RawCurrentAllXData1,'YData',handles.RawCurrentAllXData2,'ZData',handles.RawCurrentCData,'CData',handles.RawCurrentCData);
+   % set(ch(end),'XData',handles.RawCurrentAllXData1,'YData',handles.RawCurrentAllXData2,'CData',handles.RawCurrentCData);
+     set(ch(end),'XData',handles.RawCurrentAllXData1,'YData',handles.RawCurrentAllXData2,'CData',handles.RawCurrentCData);
+   
+   %  delete(ch(end))
+    % imagesc(handles.RawCurrentAllXData1,handles.RawCurrentAllXData2,handles.RawCurrentCData);
+
+ % handles.hDetectorRect   = imrect(handles.rawaxes,handles.hDetectorRectPos);
+ % setColor(handles.hDetectorRect,[0.5 0.5 0.5]);
+ % setResizable(handles.hDetectorRect,0);
+ % fcn = makeConstrainToRectFcn('imrect',[handles.hDetectorRectPos(1) handles.hDetectorRectPos(1)+handles.hDetectorRectPos(3)],[handles.hDetectorRectPos(2) handles.hDetectorRectPos(2)+handles.hDetectorRectPos(4)]);
+ % setPositionConstraintFcn(handles.hDetectorRect,fcn);
+  
+  
+    %if handles.rawplotscale
         %set(handles.rawaxes,'Clim',[-2, 1]);
       % set(handles.rawaxes,'Clim',[0, 4]);
      % else
@@ -1365,6 +1379,7 @@ function handles = drawRaw(handles)
 return;
  
 function handles = change_states(handles)
+ 
   
 if any(handles.uu) && ~handles.hasPopulated_uu
 
@@ -1513,16 +1528,26 @@ end
   
 function handles= package_process(handles)
 
+% CHANGE NOV 28 2015
 if handles.listExists
   exp = process_filearray(handles.FullFileList(end:-1:1),handles);
-  N = length(handles.experiment);
-  M = length(exp);
-  
-  for i = (N+1):(N+M)
-    handles.experiment{i} = exp{i-N};
-  end
+ 
+  %M = length(exp);
+  handles.experiment = exp;
+
 end
 
+% if handles.listExists
+%   exp = process_filearray(handles.FullFileList(end:-1:1),handles);
+%   N = length(handles.experiment);
+%   M = length(exp);
+%   
+%   for i = (N+1):(N+M)
+%     handles.experiment{i} = exp{i-N};
+%   end
+% end
+handles.originalexperiment = handles.experiment;
+ 
 
 
 handles = reduceData(handles);
@@ -1541,18 +1566,25 @@ function preferences_Callback(hObject, eventdata, handles)
 % hObject    handle to preferences (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+handles.preferences = preferences('Visible','off');
 set(handles.preferences,'Visible','on');
 uiwait(handles.preferences);
 
 handles.preferences = preferences('Visible','off');
 set(handles.preferences,'Visible','off');
-se = load('settings.mat');
 
+
+%if isdeployed
+if isdeployed
+    %se = load(fullfile(ctfroot,'Documents/cycle143/Reduction/v0.5_newh5','settings.mat'));
+    
+     se = load(fullfile(ctfroot,'sared','settings.mat'));
+else
+  se = load('settings.mat');
+end
 
 handles.settings = se;
 guidata(hObject, handles);
-
-
 
 drawnow;
 
@@ -1658,7 +1690,9 @@ function handles = doPolarizationCorrection(handles,hObject)
           sIdu = handles.sI(handles.du);
           sIdd = handles.sI(handles.dd);
           
-          [tIuu,ti] = max(aIuu);
+          [tIuu,ti] = max(aIuu)
+          ti = 170;
+          aIuu(ti)
           tsIuu     = asIuu(ti);
           
           tIud  = aIud(ti);
@@ -1706,70 +1740,70 @@ function handles = doPolarizationCorrection(handles,hObject)
       dd = find(handles.dd == 1);
       
       
-      for i = 1:length(handles.I)/4
-        p(i) = pmax;
-        up(i) = upmax;
-        a(i) = amax;
-        ua(i) = uamax;
-        %[p(i),up(i)] = calc_p([Iuu(i),Iud(i),Idu(i),Idd(i)],[sIuu(i),sIud(i),sIdu(i),sIdd(i)],phi,uphi,fa,ufa,fp,ufp);
-        %[a(i),ua(i)] = calc_a(phi,uphi,p(i),up(i));
-        [S,dS] = correct_spinstates([Iuu(i) Iud(i) Idu(i) Idd(i)]',[sIuu(i) sIud(i) sIdu(i) sIdd(i)]',a(i),p(i),fa,fp,ua(i),up(i),ufa,ufp);
-        %  [S,dS] = correct_spinstates([Iuu(i) Iud(i) Idu(i) Idd(i)]',a,p,fa,fp,ua,up,ufa,ufp);
-        
-        
-        handles.S(uu(i)) = S(1);
-        handles.S(ud(i)) = S(2);
-        handles.S(du(i)) = S(3);
-        handles.S(dd(i)) = S(4);
-        
-        handles.sS(uu(i)) = dS(1);
-        handles.sS(ud(i)) = dS(2);
-        handles.sS(du(i)) = dS(3);
-        handles.sS(dd(i)) = dS(4);
-        
-      end
-      handles.p = p;
-      handles.a = a;
-      handles.sp = up;
-      handles.sa = ua;
+%       for i = 1:length(handles.I)/4
+%         p(i) = pmax;
+%         up(i) = upmax;
+%         a(i) = amax;
+%         ua(i) = uamax;
+%         %[p(i),up(i)] = calc_p([Iuu(i),Iud(i),Idu(i),Idd(i)],[sIuu(i),sIud(i),sIdu(i),sIdd(i)],phi,uphi,fa,ufa,fp,ufp);
+%         %[a(i),ua(i)] = calc_a(phi,uphi,p(i),up(i));
+%         [S,dS] = correct_spinstates([Iuu(i) Iud(i) Idu(i) Idd(i)]',[sIuu(i) sIud(i) sIdu(i) sIdd(i)]',a(i),p(i),fa,fp,ua(i),up(i),ufa,ufp);
+%         %  [S,dS] = correct_spinstates([Iuu(i) Iud(i) Idu(i) Idd(i)]',a,p,fa,fp,ua,up,ufa,ufp);
+%         
+%         
+%         handles.S(uu(i)) = S(1);
+%         handles.S(ud(i)) = S(2);
+%         handles.S(du(i)) = S(3);
+%         handles.S(dd(i)) = S(4);
+%         
+%         handles.sS(uu(i)) = dS(1);
+%         handles.sS(ud(i)) = dS(2);
+%         handles.sS(du(i)) = dS(3);
+%         handles.sS(dd(i)) = dS(4);
+%         
+%       end
+%       handles.p = p;
+%       handles.a = a;
+%       handles.sp = up;
+%       handles.sa = ua;
       
-      if any(handles.uu) && ~handles.hasSpinCorrected
-        handles.dropdReflString1= ['suu', handles.dropdReflString3];
-        set(handles.dropdRefl1,'String',handles.dropdReflString3);
-        %set(handles.dropdRefl2,'String',handles.dropdReflString);
-      end
-      
-      if any(handles.du) && ~handles.hasSpinCorrected
-        handles.dropdReflString1 = ['sdu', handles.dropdReflString3];
-        set(handles.dropdRefl1,'String',handles.dropdReflString3);
-        % set(handles.dropdRefl2,'String',handles.dropdReflString);
-      end
-      
-      if any(handles.du) && ~handles.hasSpinCorrected
-        handles.dropdReflString1 = ['sud', handles.dropdReflString3];
-        set(handles.dropdRefl1,'String',handles.dropdReflString3);
-        %set(handles.dropdRefl2,'String',handles.dropdReflString);
-      end
-      
-      if any(handles.dd) && ~handles.hasSpinCorrected
-        handles.dropdReflString1 = ['sdd', handles.dropdReflString3];
-        set(handles.dropdRefl1,'String',handles.dropdReflString3);
-        %  set(handles.dropdRefl2,'String',handles.dropdReflString);
-      end
-      
-      if any(handles.dd) && ~handles.hasSpinCorrected
-        handles.dropdReflString1 = ['p','a', handles.dropdReflString3];
-        set(handles.dropdRefl1,'String',handles.dropdReflString3);
-        %  set(handles.dropdRefl2,'String',handles.dropdReflString);
-      end
+%       if any(handles.uu) && ~handles.hasSpinCorrected
+%         handles.dropdReflString1= ['suu', handles.dropdReflString3];
+%         set(handles.dropdRefl1,'String',handles.dropdReflString3);
+%         %set(handles.dropdRefl2,'String',handles.dropdReflString);
+%       end
+%       
+%       if any(handles.du) && ~handles.hasSpinCorrected
+%         handles.dropdReflString1 = ['sdu', handles.dropdReflString3];
+%         set(handles.dropdRefl1,'String',handles.dropdReflString3);
+%         % set(handles.dropdRefl2,'String',handles.dropdReflString);
+%       end
+%       
+%       if any(handles.du) && ~handles.hasSpinCorrected
+%         handles.dropdReflString1 = ['sud', handles.dropdReflString3];
+%         set(handles.dropdRefl1,'String',handles.dropdReflString3);
+%         %set(handles.dropdRefl2,'String',handles.dropdReflString);
+%       end
+%       
+%       if any(handles.dd) && ~handles.hasSpinCorrected
+%         handles.dropdReflString1 = ['sdd', handles.dropdReflString3];
+%         set(handles.dropdRefl1,'String',handles.dropdReflString3);
+%         %  set(handles.dropdRefl2,'String',handles.dropdReflString);
+%       end
+%       
+%       if any(handles.dd) && ~handles.hasSpinCorrected
+%         handles.dropdReflString1 = ['p','a', handles.dropdReflString3];
+%         set(handles.dropdRefl1,'String',handles.dropdReflString3);
+%         %  set(handles.dropdRefl2,'String',handles.dropdReflString);
+%       end
       
       handles.hasSpinCorrected = 1;
       
     else
       handles.doPolarizationCorrection = 1;
       set(handles.mnuPolarizationLeakage,'Checked','off');
-      handles.dropdReflString1 = {''};
-      set(handles.dropdRefl1,'String',{'None'});
+   %   handles.dropdReflString1 = {''};
+    %  set(handles.dropdRefl1,'String',{'None'});
       handles.hasSpinCorrected = 0;
     end
     handles = change_states(handles);
@@ -2137,15 +2171,15 @@ switch str{val}
      handles.ReflYLabel2 = 'Background';
      handles.ReflYScaleState2 = 'log';
      
-   case 'dI/I'
-     handles.ReflPlot2 = 'dI/I'; 
-     handles.ReflCurrentAllYData2  =  handles.dII;
-     handles.ReflCurrentAllsYData2 =  zeros(size(handles.dII));
+   case 'dQQz'
+     handles.ReflPlot2 = 'dqQz'; 
+     handles.ReflCurrentAllYData2  =  handles.sdQQz_specular;
+     handles.ReflCurrentAllsYData2 =  zeros(size(handles.sdQQz_specular));
 
-     handles.ReflCurrentYData2  = handles.dII(handles.ReflSpinhandle);
+     handles.ReflCurrentYData2  = handles.sdQQz_specular(handles.ReflSpinhandle);
      handles.ReflCurrentsYData2 = handles.ReflCurrentAllsYData2(handles.ReflSpinhandle);
      handles.ReflCurrentXData2  = handles.ReflCurrentAllXData2((handles.ReflSpinhandle));  
-     handles.ReflYLabel2 = 'dI/I';
+     handles.ReflYLabel2 = 'dQ_z/Q_z';
      handles.ReflYScaleState2 = 'log';
      
      case 'New Time'
@@ -2199,8 +2233,6 @@ switch str{val}
     handles.ReflYScaleState2 = 'lin';
   case 'Sample slit width'
     handles.ReflPlot2 = 'Sample slit width';
-    size(handles.SampleSlit)
-    size( handles.SampleSlit(handles.ReflSpinhandle))
     
     handles.ReflCurrentAllYData2  =  handles.SampleSlit;
     handles.ReflCurrentAllsYData2 =  0.0*handles.ReflCurrentAllYData2;
@@ -2404,7 +2436,7 @@ guidata(hObject, handles);
 
 % Hint: get(hObject,'Value') returns toggle state of chkCompare
 
-
+%gkp
 % --- Executes on selection change in dropdXaxis1.
 function dropdXaxis1_Callback(hObject, eventdata, handles)
 % hObject    handle to dropdXaxis1 (see GCBO)
@@ -2856,15 +2888,16 @@ file=fullfile(pathname,filename)
  % fclose(fid);
 
  
+ 
  [Qsortuu,idxuu] = sort(handles.Q(handles.uu),'ascend');
  [Qsortud,idxud] = sort(handles.Q(handles.ud),'ascend');
  [Qsortdu,idxdu] = sort(handles.Q(handles.du),'ascend');
  [Qsortdd,idxdd] = sort(handles.Q(handles.dd),'ascend');
  
- sQz_uu = handles.sQz(handles.uu); sQz_uu = sQz_uu(idxuu);
- sQz_ud = handles.sQz(handles.ud); sQz_ud = sQz_ud(idxud);
- sQz_du = handles.sQz(handles.du); sQz_du = sQz_du(idxdu);
- sQz_dd = handles.sQz(handles.dd); sQz_dd = sQz_dd(idxdd);
+ sQz_uu = handles.sQz_specular(handles.uu)'; sQz_uu = sQz_uu(idxuu);
+ sQz_ud = handles.sQz_specular(handles.ud)'; sQz_ud = sQz_ud(idxud);
+ sQz_du = handles.sQz_specular(handles.du)'; sQz_du = sQz_du(idxdu);
+ sQz_dd = handles.sQz_specular(handles.dd)'; sQz_dd = sQz_dd(idxdd);
  
  
 
@@ -2881,24 +2914,24 @@ file=fullfile(pathname,filename)
 
   fid     = fopen([file(1:end-4),'_uu.dat'],'w');
 %regexprep(sprintf('%8.2E',a),'E-0','E-')
-  fprintf(fid,'%8.2E %8.2E %8.2E\n',[Qsortuu'; Isortuu'; sIsortuu']);
+  fprintf(fid,'%8.9E %8.9E %8.9E %8.9E\n',[Qsortuu'; Isortuu'; sIsortuu'; sQz_uu']);
   %fprintf(fid,'%7.9f %7.9f %7.9f\n',[Qsortuu'; Isortuu'; sIsortuu']); %sqz(handles.uu')'
   fclose(fid);
   
   fid     = fopen([file(1:end-4),'_du.dat'],'w');
-  fprintf(fid,'%8.2E %8.2E %8.2E\n',[Qsortdu'; Isortdu'; sIsortdu']);
+  fprintf(fid,'%8.9E %8.9E %8.9E %8.9E\n',[Qsortdu'; Isortdu'; sIsortdu'; sQz_du']);
   %fprintf(fid,'%7.9f %7.9f %7.9f \n',[Qsortdu'; Isortdu'; sIsortdu']);
   fclose(fid);
   
   fid     = fopen([file(1:end-4),'_ud.dat'],'w');
-  fprintf(fid,'%8.2E %8.2E %8.2E\n',[Qsortud'; Isortud'; sIsortud']);
+  fprintf(fid,'%8.9E %8.9E %8.9E %8.9E\n',[Qsortud'; Isortud'; sIsortud'; sQz_ud']);
   %fprintf(fid,'%7.9f %7.9f %7.9f \n',[Qsortud'; Isortud';sIsortud']);
   fclose(fid);
  
   fid     = fopen([file(1:end-4),'_dd.dat'],'w');
 
  % fprintf(fid,'%7.9f %7.9f %7.9f \n',[Qsortdd'; Isortdd';sIsortdd']);
-  fprintf(fid,'%8.2E %8.2E %8.2E\n',[Qsortdd'; Isortdd'; sIsortdd']);
+  fprintf(fid,'%8.9E %8.9E %8.9E %8.9E\n',[Qsortdd'; Isortdd'; sIsortdd'; sQz_dd']);
   fclose(fid);
 %savedata2('refl.dat',handles.ReflCurrentXData1,handles.ReflCurrentYData1,handles.ReflCurrentsYData1,sqz(handles.ReflSpinhandle'));
 %dataset = {'north','south'; 'east','west'};
@@ -3226,6 +3259,7 @@ state.listDirectExists = handles.listDirectExists;
 state.doMonitor = handles.doMonitor;
 state.doBackground = handles.doBackground;
 state.doOverIllumination = handles.doOverIllumination;
+state.doCurvatureCorrect = handles.doCurvatureCorrect;
 state.doNormalize = handles.doNormalize;
 state.doPolarizationCorrection = handles.doPolarizationCorrection;
 state.doThetaOffset = handles.doThetaOffset;
@@ -3330,6 +3364,7 @@ handles.listDirectExists = state.listDirectExists;
 handles.doMonitor          = state.doMonitor;
 handles.doBackground       = state.doBackground;
 handles.doOverIllumination = state.doOverIllumination;
+handles.doCurvatureCorrect = state.doCurvatureCorrect;
 handles.hasPopulated_bkg = state.hasPopulated_bkg;
 handles.currentList = state.currentList;
 handles.doNormalize = state.doNormalize;
@@ -3384,6 +3419,10 @@ end
 if handles.doOverIllumination
   set(handles.mnuOverIllumination,'Checked','on');
 end
+if handles.doCurvatureCorrect
+  set(handles.mnuSampleCurvature,'Checked','on');
+end
+
 if ~handles.doPolarizationCorrection
   set(handles.mnuPolarizationLeakage,'Checked','on');
 end
@@ -3575,6 +3614,30 @@ function handles = doOverIllumination(handles,hObject)
   end
 return;
 
+function handles = doCurvatureCorrect(handles,hObject)
+  
+  if ~handles.isMakingROI && ~handles.isMakingBROI
+    if handles.doCurvatureCorrect
+      handles.doCurvatureCorrect = 0;
+      set(handles.mnuSampleCurvature,'Checked','off');
+    else
+      handles.doCurvatureCorrect = 1;
+      set(handles.mnuSampleCurvature,'Checked','on');
+      handles.slope = str2num(cell2mat(inputdlg('Enter angle: [0.075]: ')));
+    end
+
+    handles = reduceData(handles);
+    handles = change_states(handles);
+    handles = drawRaw(handles);
+    handles = drawRefl(handles);
+    handles = drawkxkz(handles);
+    guidata(hObject, handles);
+  else
+    set(handles.tabgp, 'SelectedTab',handles.tab1);
+    msgbox('Already making a ROI, please double click on the ROI to proceed');
+  end
+return;
+
 
 function handles = doMonitor(handles,hObject)
         
@@ -3611,15 +3674,22 @@ return;
         if handles.settings.doROI1
           for i= 1:length(handles.experiment)
             handles.experiment{i}.hasBackROI  = 0;
+            
           end
           delete(handles.hBackgroundROI);
           
         elseif handles.settings.doROI2
           for i= 1:length(handles.experiment)
             handles.experiment{i}.hasBackROI_2  = 0;
+           
           end
           delete(handles.hBackgroundROI1);
           delete(handles.hBackgroundROI2);
+        elseif handles.settings.doModel
+         for i= 1:length(handles.experiment)
+            
+            handles.experiment{i}.hasGaussFit  = 0;
+          end
         end
         
         handles.hasPopulated_bkg = 0;
@@ -3678,6 +3748,25 @@ return;
             idx     = get(handles.lstFiles, 'value');
             handles = fitModel_genetic(handles,idx);
           end
+          
+          
+          if  ~handles.hasPopulated_bkg
+            if any(handles.uu)
+              handles.dropdReflString = [handles.dropdReflString,'Background_uu'];
+            end
+            if any(handles.ud)
+              handles.dropdReflString = [handles.dropdReflString,'Background_ud'];
+            end
+            if any(handles.du)
+              handles.dropdReflString = [handles.dropdReflString,'Background_du'];
+            end
+            if any(handles.dd)
+              handles.dropdReflString = [handles.dropdReflString,'Background_dd'];
+            end
+            
+            set(handles.dropdRefl,'String',handles.dropdReflString);
+            handles.hasPopulated_bkg = 1;
+          end        
           
         elseif handles.settings.doROI1
           
@@ -4710,7 +4799,164 @@ function mnuExport2D_Callback(hObject, eventdata, handles)
 % hObject    handle to mnuExport2D (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+%gkp
+[filename, pathname, filterindex] = uiputfile( ...
+{'*.dat;','2D Reflectivity';...
+ '*.dat','2D Reflectivity (*.dat)';...
+ '*.*',  'All Files (*.*)'},...
+ 'Save as');
+% 
+% [filename, pathname, filterindex] = uiputfile( ...
+% {'*.m;*.fig;*.mat;*.slx;*.mdl',...
+%  'MATLAB Files (*.m,*.fig,*.mat,*.slx,*.mdl)';
+%  '*.m', 'program files (*.m)';...
+%  '*.fig','Figures (*.fig)';...
+%  '*.mat','MAT-files (*.mat)';...
+%  '*.slx;*.mdl','Models (*.slx,*.mdl)';...
+%  '*.*',  'All Files (*.*)'},...
+%  'Save as');
+file=fullfile(pathname,filename);
 
+%     handles.KXKZ_CurrentAllXData1 = handles.Qx;
+%     handles.KXKZ_CurrentXData1    = handles.KXKZ_CurrentAllXData1(:,handles.KXKZ_CurrentSpinhandle);
+%     handles.KXKZ_CurrentAllXData2 = handles.Qz;
+%     handles.KXKZ_CurrentXData2    = handles.KXKZ_CurrentAllXData2(:,handles.KXKZ_CurrentSpinhandle);
+%     handles.KXKZ_CurrentYData     = handles.IQLog(:,handles.KXKZ_CurrentSpinhandle);
+%     handles.KXKZ_CurrentYDataLog  = handles.IQLog(:,handles.KXKZ_CurrentSpinhandle);
+
+qxuu = handles.RTheta(:,handles.uu);
+qzuu = handles.RTwoTheta(:,handles.uu);
+Iuu  = handles.IQ(:,handles.uu);
+
+
+save('theta.mat','qxuu','qzuu','Iuu');
+
+
+[M,N] = size(qxuu);
+
+qxuu = reshape(qxuu,[1,M*N]);
+qzuu = reshape(qzuu,[1,M*N]);
+Iuu = reshape(Iuu,[1,M*N]);
+
+fid     = fopen([file(1:end-4),'_uu_angular.dat'],'w');
+
+fprintf(fid,'%s %d %s %d\n','#Rows',M,'Columns',N);
+fprintf(fid,'%8.3E %8.3E %8.3E\n',[qxuu; qzuu; Iuu]);
+fclose(fid);
+
+qxud = handles.RTheta(:,handles.ud);
+qzud = handles.RTwoTheta(:,handles.ud);
+Iud  = handles.IQ(:,handles.ud);
+
+[M,N] = size(qxud);
+
+qxud = reshape(qxud,[1,M*N]);
+qzud = reshape(qzud,[1,M*N]);
+Iud = reshape(Iud,[1,M*N]);
+
+fid     = fopen([file(1:end-4),'_ud_angular.dat'],'w');
+
+fprintf(fid,'%s %d %s %d\n','#Rows',M,'Columns',N);
+fprintf(fid,'%8.3E %8.3E %8.3E\n',[qxud; qzud; Iud]);
+fclose(fid);
+
+qxdu = handles.RTheta(:,handles.du);
+qzdu = handles.RTwoTheta(:,handles.du);
+Idu  = handles.IQ(:,handles.du);
+
+[M,N] = size(qxdu);
+
+qxdu = reshape(qxdu,[1,M*N]);
+qzdu = reshape(qzdu,[1,M*N]);
+Idu = reshape(Idu,[1,M*N]);
+
+fid     = fopen([file(1:end-4),'_du_angular.dat'],'w');
+
+fprintf(fid,'%s %d %s %d\n','#Rows',M,'Columns',N);
+fprintf(fid,'%8.3E %8.3E %8.3E\n',[qxdu; qzdu; Idu]);
+fclose(fid);
+
+qxdd = handles.RTheta(:,handles.dd);
+qzdd = handles.RTwoTheta(:,handles.dd);
+Idd  = handles.IQ(:,handles.dd);
+
+[M,N] = size(qxdd);
+
+qxdd = reshape(qxdd,[1,M*N]);
+qzdd = reshape(qzdd,[1,M*N]);
+Idd = reshape(Idd,[1,M*N]);
+
+fid     = fopen([file(1:end-4),'_dd_angular.dat'],'w');
+
+fprintf(fid,'%s %d %s %d\n','#Rows',M,'Columns',N);
+fprintf(fid,'%8.3E %8.3E %8.3E\n',[qxdd; qzdd; Idd]);
+fclose(fid);
+
+% ------------------------------------------------------
+qxuu = handles.Qx(:,handles.uu);
+qzuu = handles.Qz(:,handles.uu);
+Iuu  = handles.IQ(:,handles.uu);
+
+[M,N] = size(qxuu);
+
+qxuu = reshape(qxuu,[1,M*N]);
+qzuu = reshape(qzuu,[1,M*N]);
+Iuu = reshape(Iuu,[1,M*N]);
+
+fid     = fopen([file(1:end-4),'_uu_q.dat'],'w');
+
+fprintf(fid,'%s %d %s %d\n','#Rows',M,'Columns',N);
+fprintf(fid,'%8.3E %8.3E %8.3E\n',[qxuu; qzuu; Iuu]);
+fclose(fid);
+
+qxud = handles.Qx(:,handles.ud);
+qzud = handles.Qz(:,handles.ud);
+Iud  = handles.IQ(:,handles.ud);
+
+[M,N] = size(qxud);
+
+qxud = reshape(qxud,[1,M*N]);
+qzud = reshape(qzud,[1,M*N]);
+Iud = reshape(Iud,[1,M*N]);
+
+fid     = fopen([file(1:end-4),'_ud_q.dat'],'w');
+
+fprintf(fid,'%s %d %s %d\n','#Rows',M,'Columns',N);
+fprintf(fid,'%8.3E %8.3E %8.3E\n',[qxud; qzud; Iud]);
+fclose(fid);
+
+qxdu = handles.Qx(:,handles.du);
+qzdu = handles.Qz(:,handles.du);
+Idu  = handles.IQ(:,handles.du);
+
+[M,N] = size(qxdu);
+
+qxdu = reshape(qxdu,[1,M*N]);
+qzdu = reshape(qzdu,[1,M*N]);
+Idu = reshape(Idu,[1,M*N]);
+
+fid     = fopen([file(1:end-4),'_du_q.dat'],'w');
+
+fprintf(fid,'%s %d %s %d\n','#Rows',M,'Columns',N);
+fprintf(fid,'%8.3E %8.3E %8.3E\n',[qxdu; qzdu; Idu]);
+fclose(fid);
+
+qxdd = handles.Qx(:,handles.dd);
+qzdd = handles.Qz(:,handles.dd);
+Idd  = handles.IQ(:,handles.dd);
+
+[M,N] = size(qxdd);
+
+qxdd = reshape(qxdd,[1,M*N]);
+qzdd = reshape(qzdd,[1,M*N]);
+Idd = reshape(Idd,[1,M*N]);
+
+fid     = fopen([file(1:end-4),'_dd_q.dat'],'w');
+
+fprintf(fid,'%s %d %s %d\n','#Rows',M,'Columns',N);
+fprintf(fid,'%8.3E %8.3E %8.3E\n',[qxdd; qzdd; Idd]);
+fclose(fid);
+  
 
 % --- Executes on button press in btnMake.
 function btnMake_Callback(hObject, eventdata, handles)
@@ -4736,7 +4982,7 @@ checkdQ = get(handles.edtResolution,'String');
 if ~any(strfind(checkdQ,'-')) 
   handles.Res = str2num(get(handles.edtResolution,'String'));
 else
-  handles.Res = handles.dQZ(handles.uu);
+  handles.Res = handles.sQz_specular(handles.uu);
 end
 
 
@@ -4798,7 +5044,7 @@ end
   
  
 
-removefromleft = 11;
+removefromleft =1;
 
 
 data(:,1) = handles.data(removefromleft:end,1);
@@ -4874,17 +5120,17 @@ if ~isempty(handles.data)
      %handles.Ruu = VaryingGaussConv(handles.Qsim,handles.Ruu,handles.Res()+eps);
 
      handles.Ruu = handles.Ruu.*SquareIntensity(asind(handles.Qsim(:)*handles.wavelength/4/pi),handles.SampleLength,handles.BeamWidth(:)).*handles.I0;
-     handles.Rud = GaussConv(handles.Qsim,handles.Rud,mean(handles.Res())+eps);
+    % handles.Rud = GaussConv(handles.Qsim,handles.Rud,mean(handles.Res())+eps);
      handles.Rud = handles.Rud.*SquareIntensity(asind(handles.Qsim(:)*handles.wavelength/4/pi),handles.SampleLength,handles.BeamWidth(:)).*handles.I0;
-     handles.Rdu = GaussConv(handles.Qsim,handles.Rdu,mean(handles.Res())+eps);
+    % handles.Rdu = GaussConv(handles.Qsim,handles.Rdu,mean(handles.Res())+eps);
      handles.Rdu = handles.Rdu.*SquareIntensity(asind(handles.Qsim(:)*handles.wavelength/4/pi),handles.SampleLength,handles.BeamWidth(:)).*handles.I0;
-     handles.Rdd = GaussConv(handles.Qsim,handles.Rdd,mean(handles.Res())+eps);
+    % handles.Rdd = GaussConv(handles.Qsim,handles.Rdd,mean(handles.Res())+eps);
      handles.Rdd = handles.Rdd.*SquareIntensity(asind(handles.Qsim(:)*handles.wavelength/4/pi),handles.SampleLength,handles.BeamWidth(:)).*handles.I0;
 
      simuu(2:end) = simuu(2:end).*SquareIntensity(asind(handles.Qsim(:)*handles.wavelength/4/pi),handles.SampleLength,handles.BeamWidth(:)).*handles.I0;
      simdd(2:end) = simdd(2:end).*SquareIntensity(asind(handles.Qsim(:)*handles.wavelength/4/pi),handles.SampleLength,handles.BeamWidth(:)).*handles.I0;
-     simuu(2:end) = GaussConv(handles.Qsim,simuu(2:end),mean(handles.Res())+eps);
-     simdd(2:end) = GaussConv(handles.Qsim,simdd(2:end),mean(handles.Res())+eps);
+    % simuu(2:end) = GaussConv(handles.Qsim,simuu(2:end),mean(handles.Res())+eps);
+    % simdd(2:end) = GaussConv(handles.Qsim,simdd(2:end),mean(handles.Res())+eps);
 
 %     ax = axes();
 %      
@@ -5813,7 +6059,7 @@ function theTable_CellEditCallback(hObject, eventdata, handles)
 %	NewData: EditData or its converted form set on the Data property. Empty if Data was not changed
 %	Error: error string when failed to convert EditData to appropriate value for Data
 % handles    structure with handles and user data (see GUIDATA)
-a = handles.Checked
+
 if eventdata.NewData == 0
   handles.Checked(eventdata.Indices(1)) = 0;
 else
@@ -5970,3 +6216,64 @@ function mnuFit_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --------------------------------------------------------------------
+function mnuExportDetectorImage_Callback(hObject, eventdata, handles)
+% hObject    handle to mnuExportDetectorImage (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+[filename, pathname, filterindex] = uiputfile( ...
+{'*.dat;','Raw Detector Image';...
+ '*.dat','Raw Detector Image (*.dat)';...
+ '*.*',  'All Files (*.*)'},...
+ 'Save as');
+
+file=fullfile(pathname,filename);
+
+switch handles.currentList
+  case 'data'
+    idx  = get(handles.lstFiles, 'value');
+    texp = handles.experiment;
+  case 'direct'
+    idx  = get(handles.lstDirectBeam, 'value');
+    texp = handles.db;
+end
+
+I =texp{idx}.im;
+[m,n] = size(I);
+xx = 1:1:m;
+yy = 1:1:n;
+
+x = repmat(xx',[1,m]);
+y = repmat(yy',[1,n]);
+
+
+
+
+
+
+%qxuu = handles.Qx(:,handles.uu);
+%qzuu = handles.Qz(:,handles.uu);
+%Iuu  = handles.IQ(:,handles.uu);
+
+[M,N] = size(I);
+
+x = reshape(x(:),[1,M*N]);
+y = reshape(y(:),[1,M*N]);
+I = reshape(I,[1,M*N]);
+
+fid     = fopen([file(1:end-4),'.dat'],'w');
+
+fprintf(fid,'%s %d %s %d\n','#Rows',M,'Columns',N);
+%fprintf(fid,'%8.3E %8.3E %8.3E\n',[x; y; I]);
+fprintf(fid,'%8.3E \n',[I]);
+fclose(fid);
+
+
+% --------------------------------------------------------------------
+function mnuSampleCurvature_Callback(hObject, eventdata, handles)
+% hObject    handle to mnuSampleCurvature (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles = doCurvatureCorrect(handles,hObject);

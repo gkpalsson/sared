@@ -197,6 +197,7 @@ for i = 1:N
   handles.sI(i)  = datapoint.sIntegr;
   handles.bI(i)  = datapoint.bIntegr;
   handles.sbI(i) = datapoint.sbIntegr;
+ 
   
   handles.M(i)        = datapoint.Monitor;
   handles.sM(i)       = sqrt(datapoint.Monitor);
@@ -240,10 +241,11 @@ for i = 1:N
     if handles.overill(i) > 1 
       handles.overill(i) = 1;
     end
+    handles.overill(handles.overill==0) = Inf;
  %  handles.overill(i) = SquareIntensity(datapoint.Theta,handles.settings.length,handles.beamw(i));
   else
     handles.overill(i) = GaussIntensity_v2(handles.settings.length,datapoint.Theta*pi/180,handles.beamw(i)/2/sqrt(2*log(2))/2,3000);
-
+    handles.overill(handles.overill==0) = Inf;
   end
   experiment{i} = datapoint;
 end
@@ -272,6 +274,7 @@ if handles.doCurvatureCorrect
   handles.I  = sum(handles.IQ(start:tend,:),1);
   handles.I  = handles.I(:);
   handles.sI = sqrt(handles.I(:));
+  % TODO: Background has not been included here!
 end
 
 if handles.doBackground && handles.settings.doModel
@@ -315,12 +318,11 @@ if handles.doMonitor
 end
 
 if handles.doOverIllumination
-
-  handles.I = handles.I./(handles.overill+eps);
-  handles.sI = handles.sI./(handles.overill+eps);
+  handles.I = handles.I./(handles.overill);
+  handles.sI = handles.sI./(handles.overill);
+  handles.bI = handles.bI./(handles.overill);
+  handles.sbI = handles.sbI./(handles.overill);
 end
-
-
 
 if handles.doNormalize
   
@@ -396,10 +398,10 @@ if handles.doNormalize
   % Dsuu is Direct beam sample slit for each direct beam point
   % TODO: Make this work for all modes of polarization
   for i = 1:length(suu)
-  unique(Dsuu)
-  suu(i)
-  unique(Dsuu) == suu(i)
-  DIuu(unique(Dsuu) == suu(i))
+%   unique(Dsuu)
+%   suu(i)
+%   unique(Dsuu) == suu(i)
+%   DIuu(unique(Dsuu) == suu(i))
   if isempty(DIuu(unique(Dsuu) == suu(i)))
     idx = find(unique(Dsuu) >= suu(i));
     DIfuu(i) = DIuu_avg(idx(1));
@@ -463,10 +465,10 @@ if handles.doNormalize
   handles.bI(handles.du)  = bIdu./DIfdu; % correct spinflip with number of dd spins?
   handles.bI(handles.dd)  = bIdd./DIfdd;
   
-  handles.bsI(handles.uu) = sbIuu;
-  handles.bsI(handles.ud) = sbIud;
-  handles.bsI(handles.du) = sbIdu;
-  handles.bsI(handles.dd) = sbIdd;
+  handles.sbI(handles.uu) = sbIuu;
+  handles.sbI(handles.ud) = sbIud;
+  handles.sbI(handles.du) = sbIdu;
+  handles.sbI(handles.dd) = sbIdd;
 
 
 end
@@ -756,11 +758,11 @@ function datapoint = processImage(datapoint)
       bpixelarea = abs(datapoint.btop-datapoint.bbottom)*abs(datapoint.bstart-datapoint.bend);
       dpixelarea = abs(datapoint.top-datapoint.bottom)*abs(datapoint.start-datapoint.end);
       
-      datapoint.bIntegr  = sum(sum(datapoint.imb));
-      datapoint.sbIntegr  = sqrt(datapoint.bIntegr);
-      datapoint.Integr    = datapoint.Integr - datapoint.bIntegr*dpixelarea/bpixelarea;
+      datapoint.bIntegr  = sum(sum(datapoint.imb))*dpixelarea/bpixelarea;
+      datapoint.sbIntegr  = sqrt(datapoint.bIntegr)*dpixelarea/bpixelarea;
+      datapoint.Integr    = datapoint.Integr - datapoint.bIntegr;
 
-      datapoint.sIntegr   = sqrt( (datapoint.sIntegr)^2 + (datapoint.sbIntegr*(dpixelarea/bpixelarea))^2 );   
+      datapoint.sIntegr   = sqrt( (datapoint.sIntegr)^2 + (datapoint.sbIntegr)^2 );   
     elseif datapoint.hasBackROI_2
       datapoint.imb1 = datapoint.im(datapoint.b21top:datapoint.b21bottom,...
       datapoint.b21start:datapoint.b21end);
@@ -771,10 +773,33 @@ function datapoint = processImage(datapoint)
       bpixelarea2 = abs(datapoint.b22top-datapoint.b21bottom)*abs(datapoint.b22start-datapoint.b22end);
       dpixelarea = abs(datapoint.top-datapoint.bottom)*abs(datapoint.start-datapoint.end);
       
-      datapoint.bIntegr  = (sum(sum(datapoint.imb1)) + sum(sum(datapoint.imb2)))/2;
-      datapoint.sbIntegr = sqrt( (0.5*sum(sum(datapoint.imb1))).^2 + (0.5*sum(sum(datapoint.imb2))).^2);
-      datapoint.Integr   = datapoint.Integr - datapoint.bIntegr*dpixelarea/(bpixelarea1+bpixelarea2);
-      datapoint.sIntegr  = sqrt( (datapoint.sIntegr)^2 + (datapoint.sbIntegr*(dpixelarea/(bpixelarea1+bpixelarea2)))^2 );     
+        integrb1 = sum(sum(datapoint.imb1));
+      integrb2 = sum(sum(datapoint.imb2));
+      
+      % Raw background in counts in the two areas multiplied by the
+      % relative area of the ROI to the background areas
+      datapoint.bIntegr  = (integrb1 + integrb2)*dpixelarea/(bpixelarea1+bpixelarea2);
+      
+      % Uncertainty for two backgrounds
+      % sbIntegr = sqrt( (P*uintegrb1)^2 + (P*uintegrb2)^2)
+      %          = sqrt( (P*sqrt(integrb1))^2 + (P*sqrt(integrb2))^2 )
+      %          = sqrt( P^2*abs(integrb1) + P^2*abs(integrb2) )
+      %          = sqrt( abs(integrb1) + abs(integrb2) )*P
+      
+      % Uncertainty of the counts in the two areas
+      datapoint.sbIntegr = sqrt( abs(integrb1) + abs(integrb2) )*dpixelarea/(bpixelarea1+bpixelarea2);
+      
+      % Integr*dpixelarea/dpixelarea^2 - bIntegr*1/(bpixelarea1+bpixelarea2)
+      % The background reduced intensity is 
+      % the intensity in the ROI: datapoint.Integr in counts
+      % minus the background in the two areas in counts
+      % COMPENSATED FOR THE RELATIVE AREAS OF THE ROI AND THE TWO AREAS OF
+      % THE BACKGROUND.
+      datapoint.Integr   = datapoint.Integr - datapoint.bIntegr;
+     
+      % Uncertainty for the background subtracted intensity:
+      
+      datapoint.sIntegr  = sqrt( (datapoint.sIntegr)^2 + (datapoint.sbIntegr)^2 );
   
     end
     
@@ -806,15 +831,18 @@ function datapoint = processImage(datapoint)
     if datapoint.hasBackROI
       datapoint.imROIb = datapoint.im(datapoint.btop:datapoint.bbottom,...
       datapoint.bstart:datapoint.bend);
-  
-      datapoint.bIntegr   = sum(sum(datapoint.imROIb));
-      datapoint.sbIntegr  = sqrt(datapoint.bIntegr);
+    
       bpixelarea = abs(datapoint.btop-datapoint.bbottom)*abs(datapoint.bstart-datapoint.bend);
       dpixelarea = abs(datapoint.top-datapoint.bottom)*abs(datapoint.start-datapoint.end);
-
-      datapoint.Integr    = datapoint.Integr - datapoint.bIntegr*(dpixelarea/bpixelarea);
-      datapoint.sIntegr   = sqrt( (datapoint.sIntegr)^2 + (datapoint.sbIntegr*(dpixelarea/bpixelarea))^2 );   
+  
+      datapoint.bIntegr   = sum(sum(datapoint.imROIb))*(dpixelarea/bpixelarea);
+      datapoint.sbIntegr  = sqrt(datapoint.bIntegr)*(dpixelarea/bpixelarea);
+ 
+      datapoint.Integr    = datapoint.Integr - datapoint.bIntegr;
+      datapoint.sIntegr   = sqrt( (datapoint.sIntegr)^2 + (datapoint.sbIntegr)^2 );   
+      
     elseif datapoint.hasBackROI_2
+      
       datapoint.imb1 = datapoint.im(datapoint.b21top:datapoint.b21bottom,...
       datapoint.b21start:datapoint.b21end);
       datapoint.imb2 = datapoint.im(datapoint.b22top:datapoint.b22bottom,...
@@ -824,12 +852,33 @@ function datapoint = processImage(datapoint)
       bpixelarea2 = abs(datapoint.b22top-datapoint.b21bottom)*abs(datapoint.b22start-datapoint.b22end);
       dpixelarea = abs(datapoint.top-datapoint.bottom)*abs(datapoint.start-datapoint.end);
       
-      datapoint.bIntegr  = (sum(sum(datapoint.imb1)) + sum(sum(datapoint.imb2)))/2;
-      datapoint.sbIntegr = sqrt( (0.5*sum(sum(datapoint.imb1))).^2 + (0.5*sum(sum(datapoint.imb2))).^2);
-
-      datapoint.Integr   = datapoint.Integr - datapoint.bIntegr*dpixelarea/(bpixelarea1+bpixelarea2);
-      datapoint.sIntegr  = sqrt( (datapoint.sIntegr)^2 + (datapoint.sbIntegr*(dpixelarea/(bpixelarea1+bpixelarea2)))^2 );   
-        
+      integrb1 = sum(sum(datapoint.imb1));
+      integrb2 = sum(sum(datapoint.imb2));
+      
+      % Raw background in counts in the two areas multiplied by the
+      % relative area of the ROI to the background areas
+      datapoint.bIntegr  = (integrb1 + integrb2)*dpixelarea/(bpixelarea1+bpixelarea2);
+      
+      % Uncertainty for two backgrounds
+      % sbIntegr = sqrt( (P*uintegrb1)^2 + (P*uintegrb2)^2)
+      %          = sqrt( (P*sqrt(integrb1))^2 + (P*sqrt(integrb2))^2 )
+      %          = sqrt( P^2*abs(integrb1) + P^2*abs(integrb2) )
+      %          = sqrt( abs(integrb1) + abs(integrb2) )*P
+      
+      % Uncertainty of the counts in the two areas
+      datapoint.sbIntegr = sqrt( abs(integrb1) + abs(integrb2) )*dpixelarea/(bpixelarea1+bpixelarea2);
+      
+      % Integr*dpixelarea/dpixelarea^2 - bIntegr*1/(bpixelarea1+bpixelarea2)
+      % The background reduced intensity is 
+      % the intensity in the ROI: datapoint.Integr in counts
+      % minus the background in the two areas in counts
+      % COMPENSATED FOR THE RELATIVE AREAS OF THE ROI AND THE TWO AREAS OF
+      % THE BACKGROUND.
+      datapoint.Integr   = datapoint.Integr - datapoint.bIntegr;
+     
+      % Uncertainty for the background subtracted intensity:
+      
+      datapoint.sIntegr  = sqrt( (datapoint.sIntegr)^2 + (datapoint.sbIntegr)^2 );
     end
    
     

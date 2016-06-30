@@ -1098,12 +1098,32 @@ function handles = drawRefl(handles)
   
   cla(handles.reflectivityaxes);
   cla(handles.secondaxes);
-  
-
+ 
+ switch handles.ReflYScaleState
+   case 'log'
+     isnonpos = Y1<=0;
+     Y1(isnonpos) = 1e-15;
+     
+     isnonpos = Y3<=0;
+     Y3(isnonpos) = 1e-15;     
+     
+     sY1m = Y1-sY1;
+     sY1p = Y1+sY1;
+     sY3m = Y3-sY3;
+     sY3p = Y3+sY3;
+     
+     sY1m(sY1m<=0) = 1e-15;
+     sY3m(sY3m<=0) = 1e-15;
+   case 'lin'
+     sY1m = Y1-sY1;
+     sY1p = Y1+sY1;
+     sY3m = Y3-sY3;
+     sY3p = Y3+sY3;
+ end
  
   hold(handles.reflectivityaxes,'off');
  
-  h=ploterr(X1,Y1,[],sY1,handles.Refl1Marker,'logy','hhy',0.5); 
+  h=ploterr(X1,Y1,[],{sY1m sY1p},handles.Refl1Marker,'logy','hhy',0.5); 
   
   if ~isempty(h)
   set(h(1),'MarkerFaceColor',get(h(1),'Color')), set(h(2),'Color',get(h(1),'Color'));
@@ -1111,7 +1131,7 @@ function handles = drawRefl(handles)
   hold(handles.reflectivityaxes,'on');
 
   if ~isempty(Y3)
-    h=ploterr(X3,Y3,[],sY3,handles.Refl3Marker,'logy','hhy',0.5); 
+    h=ploterr(X3,Y3,[],{sY3m sY3p},handles.Refl3Marker,'logy','hhy',0.5); 
     size(h)
     if ~isempty(h)
       set(h(1),'MarkerFaceColor',get(h(1),'Color')), set(h(2),'Color',get(h(1),'Color'));
@@ -1145,22 +1165,33 @@ function handles = drawRefl(handles)
   yres1 = mean(abs(diff(Y1)));
   yres2 = mean(abs(diff(Y2)));
   
-  if (res1 ~= 0 && res2 ~= 0) && (yres1 ~= 0 && yres2 ~= 0) && ...
-      (~isnan(res2) && ~isnan(res1)) && (~isnan(yres2) && ~isnan(yres1)) 
-    %if strcmp(handles.ReflYScaleState2,'log')
-    %  axis(handles.secondaxes,[min(X1)-res1 max(X1)+res1 min(Y1(Y1>0))-min(Y1(Y1>0))*0.4 max(Y1)*1.4]);
-    %  axis(handles.reflectivityaxes,[min(X1)-res1 max(X1)+res1 min(Y1(Y1>0))-min(Y1(Y1>0))*0.4 max(Y1)*1.4]);
-%           set(handles.secondaxes,'YTick',get(handles.reflectivityaxes,'YTick'));
-    %   else
-     axis(handles.secondaxes,[min(X1)-res1 max(X1)+res1 min(Y2(Y2>0))-min(Y2(Y2>0))*0.1 max(Y2).*1.1]);
-     %axis(handles.reflectivityaxes,[min(X1)-res1 max(X1)+res1 min(Y1(Y1>0))-min(Y1(Y1>0))*0.4 max(Y1)*1.4]);
-     mix = min( [min(X1) min(X3)] );
-     mlx = max( [max(X1) max(X3)] );
-     miy = min( [min(Y1) max(Y3)] );
-     mly = max( [max(Y1) max(Y3)] );
-     axis(handles.reflectivityaxes,[mix-res1 mlx+res1 miy-miy*0.4 mly*1.4]);
-     axis(handles.secondaxes,[mix-res1 mlx+res1 min(Y2(Y2>0))-min(Y2(Y2>0))*0.1 max(Y2).*1.1]);
-  end
+%   if (res1 ~= 0 && res2 ~= 0) && (yres1 ~= 0 && yres2 ~= 0) && ...
+%       (~isnan(res2) && ~isnan(res1)) && (~isnan(yres2) && ~isnan(yres1)) 
+%     %if strcmp(handles.ReflYScaleState2,'log')
+%     %  axis(handles.secondaxes,[min(X1)-res1 max(X1)+res1 min(Y1(Y1>0))-min(Y1(Y1>0))*0.4 max(Y1)*1.4]);
+%     %  axis(handles.reflectivityaxes,[min(X1)-res1 max(X1)+res1 min(Y1(Y1>0))-min(Y1(Y1>0))*0.4 max(Y1)*1.4]);
+% %           set(handles.secondaxes,'YTick',get(handles.reflectivityaxes,'YTick'));
+%     %   else
+%      axis(handles.secondaxes,[min(X1)-res1 max(X1)+res1 min(Y2(Y2>0))-min(Y2(Y2>0))*0.1 max(Y2).*1.1]);
+%      %axis(handles.reflectivityaxes,[min(X1)-res1 max(X1)+res1 min(Y1(Y1>0))-min(Y1(Y1>0))*0.4 max(Y1)*1.4]);
+%      mix = min( [min(X1) min(X3)] );
+%      mlx = max( [max(X1) max(X3)] );
+%      miy = min( [min(Y1) max(Y3)] );
+%      mly = max( [max(Y1) max(Y3)] );
+%      axis(handles.reflectivityaxes,[mix-res1 mlx+res1 miy-miy*0.4 mly*1.4]);
+%      axis(handles.secondaxes,[mix-res1 mlx+res1 min(Y2(Y2>0))-min(Y2(Y2>0))*0.1 max(Y2).*1.1]);
+%   end
+%   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 %       end
 %     else
 %       if strcmp(handles.ReflYScaleState2,'log')
